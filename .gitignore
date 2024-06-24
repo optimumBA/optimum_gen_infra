@@ -24,3 +24,18 @@ optimum_gen_infra-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Environment secrets
+.env
+
+# macOS artifacts
+.DS_Store
+
+# Dialyzer PLT files
+/priv/plts/*.plt
+/priv/plts/*.plt.hash
+
+# Prettier
+/node_modules/
+package.json
+package-lock.json

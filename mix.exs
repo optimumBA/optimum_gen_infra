@@ -5,9 +5,34 @@ defmodule OptimumGenInfra.MixProject do
     [
       app: :optimum_gen_infra,
       version: "0.1.0",
-      elixir: "~> 1.17",
+      elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      aliases: aliases(),
+      deps: optimum_deps() ++ app_deps(),
+
+      # CI
+      dialyzer: [
+        plt_add_apps: [:ex_unit, :mix],
+        plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+      ],
+      preferred_cli_env: [
+        ci: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        credo: :test,
+        dialyzer: :test
+      ],
+      test_coverage: [tool: ExCoveralls],
+
+      # Docs
+      name: "OptimumGenInfra",
+      source_url: "https://github.com/almirsarajcic/optimum_gen_infra",
+      docs: [
+        extras: ["README.md"],
+        main: "readme",
+        source_ref: "main"
+      ]
     ]
   end
 
@@ -19,10 +44,45 @@ defmodule OptimumGenInfra.MixProject do
   end
 
   # Run "mix help deps" to learn about dependencies.
-  defp deps do
+  defp app_deps do
+    []
+  end
+
+  defp optimum_deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:credo, "~> 1.7", only: :test, runtime: false},
+      {:dialyxir, "~> 1.4", only: :test, runtime: false},
+      {:doctest_formatter, "~> 0.3", only: [:dev, :test], runtime: false},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.18", only: :test},
+      {:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
+      {:mix_audit, "~> 2.1", only: :test, runtime: false}
+    ]
+  end
+
+  # Aliases are shortcuts or tasks specific to the current project.
+  # For example, to install project dependencies and perform other setup tasks, run:
+  #
+  #     $ mix setup
+  #
+  # See the documentation for `Mix` for more info on aliases.
+  defp aliases do
+    [
+      setup: [
+        "deps.get",
+        "cmd npm i -D prettier prettier-plugin-toml"
+      ],
+      ci: [
+        "deps.unlock --check-unused",
+        "deps.audit",
+        "hex.audit",
+        "format --check-formatted",
+        "cmd npx prettier -c .",
+        "credo --strict",
+        "dialyzer",
+        "test --cover --warnings-as-errors"
+      ],
+      prettier: ["cmd npx prettier -w ."]
     ]
   end
 end

@@ -1,0 +1,775 @@
+defmodule Mix.Tasks.Optimum.Gen.Infra do
+  @shortdoc "Generates Optimum infrastructure code"
+
+  @moduledoc """
+  Generates Optimum infrastructure code
+  Should be run after Phoenix app is generated.
+  """
+
+  use Mix.Task
+
+  @aliases ~S"""
+        setup: [
+          "deps.get",
+          "cmd npm i -D prettier prettier-plugin-toml",<ecto>
+          "ecto.setup",</ecto>
+          "assets.setup",
+          "assets.build"
+        ],<ecto>
+        "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+        "ecto.reset": ["ecto.drop", "ecto.setup"],
+        test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],</ecto>
+        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+        "assets.build": ["tailwind <app_name>", "esbuild <app_name>"],
+        "assets.deploy": [
+          "tailwind <app_name> --minify",
+          "esbuild <app_name> --minify",
+          "phx.digest"
+        ],
+        ci: [
+          "deps.unlock --check-unused",
+          "deps.audit",
+          "hex.audit",
+          "sobelow --config .sobelow-conf",
+          "format --check-formatted",
+          "cmd npx prettier -c .",
+          "credo --strict",
+          "dialyzer",
+          "test --cover --warnings-as-errors"
+        ],
+        prettier: ["cmd npx prettier -w ."]
+  """
+
+  @dockerignore ~S"""
+  # GitHub workflows
+  /.github/
+
+  # macOS artifacts
+  .DS_Store
+
+  # Optimum development/test artifacts
+  /priv/plts/
+  .env
+  .env.prod.sample
+  .env.sample
+  .formatter.exs
+  .mise.toml
+  .tool-versions
+  coveralls.json
+  fly.toml
+  README.md
+
+  # Prettier
+  /node_modules/
+  package.json
+  package-lock.json
+  """
+
+  @gitignore ~S"""
+  # Environment secrets
+  .env
+
+  # macOS artifacts
+  .DS_Store
+
+  # Dialyzer PLT files
+  /priv/plts/*.plt
+  /priv/plts/*.plt.hash
+
+  # Prettier
+  /node_modules/
+  package.json
+  package-lock.json
+  """
+
+  @switches [
+    ecto: :boolean,
+    elixir_version: :string,
+    fly_app_prefix: :string,
+    github_url: :string,
+    node_version: :string,
+    otp_version: :string
+  ]
+
+  @deps ~S"""
+        {:appsignal_phoenix, "~> 2.3"},
+        {:credo, "~> 1.7", only: :test, runtime: false},
+        {:dialyxir, "~> 1.4", only: :test, runtime: false},
+        {:doctest_formatter, "~> 0.3", only: [:dev, :test], runtime: false},
+        {:ex_doc, "~> 0.34", only: :dev, runtime: false},<ecto>
+        {:ex_machina, "~> 2.7", only: :test},</ecto>
+        {:excoveralls, "~> 0.18", only: :test},
+        {:faker, "~> 0.18", only: :test},
+        {:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
+        {:mix_audit, "~> 2.1", only: :test, runtime: false},
+        {:sobelow, "~> 0.13", only: :test, runtime: false}
+  """
+
+  @file_paths [
+    config: "config/config.exs",
+    coveralls: "coveralls.json",
+    credo: ".credo.exs",
+    dialyzer_ignore: ".dialyzer_ignore.exs",
+    dockerfile: "Dockerfile",
+    dockerignore: ".dockerignore",
+    env_prod_sample: ".env.prod.sample",
+    env_sample: ".env.sample",
+    env: ".env",
+    fly: "fly.toml",
+    fly_prod: "fly.prod.toml",
+    formatter: ".formatter.exs",
+    github_workflows: ".github/github_workflows.ex",
+    gitignore: ".gitignore",
+    health_controller: "lib/<app_name>_web/controllers/health_controller.ex",
+    health_controller_test: "test/<app_name>_web/controllers/health_controller_test.exs",
+    makefile: "Makefile",
+    mise: ".mise.toml",
+    mix: "mix.exs",
+    prettierignore: ".prettierignore",
+    prettierrc: ".prettierrc.js",
+    prod_config: "config/prod.exs",
+    rel_env: "rel/env.sh.eex",
+    readme: "README.md",
+    router: "lib/<app_name>_web/router.ex",
+    runtime_config: "config/runtime.exs",
+    sobelow_conf: ".sobelow-conf",
+    tool_versions: ".tool-versions"
+  ]
+
+  @new_files [
+    @file_paths[:coveralls],
+    @file_paths[:credo],
+    @file_paths[:dialyzer_ignore],
+    @file_paths[:env],
+    @file_paths[:env_prod_sample],
+    @file_paths[:env_sample],
+    @file_paths[:fly],
+    @file_paths[:fly_prod],
+    @file_paths[:github_workflows],
+    @file_paths[:health_controller],
+    @file_paths[:health_controller_test],
+    @file_paths[:makefile],
+    @file_paths[:mise],
+    @file_paths[:prettierignore],
+    @file_paths[:prettierrc],
+    @file_paths[:readme],
+    @file_paths[:sobelow_conf]
+  ]
+
+  @config ~S"""
+  # AppSignal
+  config :appsignal, :config,
+    active: false,<ecto>
+    ecto_repos: [<AppName>.Repo],</ecto>
+    env: config_env(),
+    ignore_actions: ["<AppName>Web.HealthController#index"],
+    name: "<app_name>",
+    otp_app: :<app_name>
+  """
+
+  @prod_config ~S"""
+  # Do not print debug messages in production
+  config :logger,
+    backends: [:console, {Appsignal.Logger.Backend, [group: "phoenix"]}],
+    level: :info
+
+  # AppSignal
+  config :appsignal, :config, active: true
+  """
+
+  @project ~S"""
+        # CI
+        dialyzer: [
+          plt_add_apps: [:ex_unit, :mix],
+          plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
+        ],
+        preferred_cli_env: [
+          ci: :test,
+          coveralls: :test,
+          "coveralls.detail": :test,
+          "coveralls.html": :test,
+          credo: :test,
+          dialyzer: :test,
+          sobelow: :test
+        ],
+        test_coverage: [tool: ExCoveralls],
+
+        # Docs
+        name: "<AppName>",
+        source_url: "<GitHub_URL>",
+        docs: [
+          extras: ["README.md"],
+          main: "readme",
+          source_ref: "main"
+        ],
+
+        # Release
+        releases: [
+          <app_name>: [
+            include_executables_for: [:unix]
+          ]
+        ]
+  """
+
+  @runtime_config ~S'''
+    appsignal_push_api_key =
+      System.get_env("APPSIGNAL_PUSH_API_KEY") ||
+        raise """
+        environment variable APPSIGNAL_PUSH_API_KEY is missing.
+        """
+
+    revision_file = Path.join([:code.priv_dir(:<app_name>), "REVISION"])
+
+    appsignal_revision =
+      revision_file
+      |> File.read!()
+      |> String.trim()
+
+    config :appsignal, :config,
+      push_api_key: appsignal_push_api_key,
+      revision: appsignal_revision
+  '''
+
+  @impl Mix.Task
+  def run(args, _opts \\ []) do
+    root = Path.expand("../../../../", __DIR__)
+    project_root = Path.expand(".")
+
+    opts = validate_opts(args)
+    validate_project(project_root)
+
+    versions = get_versions(opts)
+    bindings = get_bindings(project_root, opts, versions)
+
+    create_new_files(root, project_root, bindings, opts)
+    update_existing_files(root, project_root, bindings, opts)
+    setup_project()
+    setup_release(root, project_root, bindings, versions, opts)
+    generate_github_workflows()
+    format_files()
+  end
+
+  defp validate_opts(args) do
+    {opts, _} = OptionParser.parse!(args, strict: @switches)
+
+    Enum.each(@switches, fn {key, _type} ->
+      unless Keyword.has_key?(opts, key) do
+        raise "Option #{key} not set"
+      end
+    end)
+
+    opts
+  end
+
+  defp validate_project(project_root) do
+    path = get_file_path(@file_paths[:mix], project_root, [])
+
+    File.exists?(path) ||
+      raise "Missing file: #{@file_paths[:mix]}. Are you in the right directory?"
+
+    project_file = File.read!(path)
+    String.match?(project_file, ~r/\{:phoenix,[^\}]+}/) || raise "Not a Phoenix app."
+  end
+
+  defp get_versions(opts) do
+    versions = [
+      elixir: Keyword.fetch!(opts, :elixir_version),
+      node: Keyword.fetch!(opts, :node_version),
+      otp: Keyword.fetch!(opts, :otp_version)
+    ]
+
+    [otp_major_version, _rest] = String.split(versions[:otp], ".", parts: 2)
+
+    Keyword.put(versions, :otp_major_version, otp_major_version)
+  end
+
+  defp get_bindings(project_root, opts, versions) do
+    mix_file_path = Path.join(project_root, @file_paths[:mix])
+    mix_file = File.read!(mix_file_path)
+
+    [app_name_camel_case] = Regex.run(~r/defmodule ([^\.]+)\./, mix_file, capture: :all_but_first)
+    [app_name_snake_case] = Regex.run(~r/app: :([^,]+)/, mix_file, capture: :all_but_first)
+    app_name_with_dash = String.replace(app_name_snake_case, "_", "-")
+
+    app_name = [
+      camel_case: app_name_camel_case,
+      snake_case: app_name_snake_case,
+      with_dash: app_name_with_dash
+    ]
+
+    [repo_name] =
+      Regex.run(~r|github\.com/[^/]+/(.+)|, Keyword.fetch!(opts, :github_url),
+        capture: :all_but_first
+      )
+
+    [
+      AppName: app_name[:camel_case],
+      app_name: app_name[:snake_case],
+      "app-name": app_name[:with_dash],
+      elixir_version: versions[:elixir],
+      fly_app_prefix: Keyword.fetch!(opts, :fly_app_prefix),
+      GitHub_URL: Keyword.fetch!(opts, :github_url),
+      node_version: versions[:node],
+      otp_major_version: versions[:otp_major_version],
+      otp_version: versions[:otp],
+      repo_name: repo_name
+    ]
+  end
+
+  defp update_mix_file(project_root, bindings, opts) do
+    mix_file_path = Path.join(project_root, @file_paths[:mix])
+    mix_file = File.read!(mix_file_path)
+
+    updated_mix_file =
+      mix_file
+      |> inject_aliases(bindings, opts)
+      |> inject_project_info(bindings, opts)
+      |> inject_mix_dependencies(bindings, opts)
+
+    File.write!(mix_file_path, updated_mix_file)
+  end
+
+  defp create_new_files(root, project_root, bindings, opts) do
+    Enum.each(@new_files, fn path -> create_file(root, project_root, path, bindings, opts) end)
+  end
+
+  defp update_existing_files(root, project_root, bindings, opts) do
+    update_mix_file(project_root, bindings, opts)
+    update_formatter_file(project_root, bindings)
+    update_gitignore_file(project_root, bindings)
+    create_tool_versions_file(root, project_root, bindings, opts)
+    update_router(project_root, bindings, opts)
+    update_config_file(project_root, bindings, opts)
+    update_runtime_config_file(project_root, bindings, opts)
+    update_prod_config_file(project_root, bindings)
+  end
+
+  defp create_file(root, project_root, path, bindings, opts) do
+    file_path = get_file_path(path, project_root, bindings)
+    template_path = get_template_path(path, root, bindings)
+
+    if File.exists?(file_path) do
+      Mix.shell().info([:yellow, "Updating file #{file_path}."])
+    else
+      Mix.shell().info([:green, "Creating file #{file_path}."])
+
+      file_path
+      |> String.split(~r/\/[^\/]+$/, parts: 2)
+      |> List.first()
+      |> File.mkdir_p!()
+
+      File.touch!(file_path)
+    end
+
+    if File.exists?(template_path) do
+      content =
+        template_path
+        |> File.read!()
+        |> inject_bindings(bindings, opts)
+
+      File.write!(file_path, content)
+    end
+  end
+
+  defp get_file_path(path, project_root, bindings) do
+    Enum.reduce(bindings, Path.join(project_root, path), fn {key, value}, path ->
+      String.replace(path, "<#{key}>", value)
+    end)
+  end
+
+  defp get_template_path(path, root, bindings) do
+    Enum.reduce(bindings, Path.join([root, "priv", "templates", path]), fn {key, _value}, path ->
+      String.replace(path, "<#{key}>", "#{key}")
+    end)
+  end
+
+  defp inject_bindings(content, bindings, opts) do
+    content =
+      Enum.reduce(bindings, content, fn {key, value}, content ->
+        String.replace(content, "<#{key}>", value)
+      end)
+
+    if opts[:ecto] do
+      String.replace(content, ~r"</?ecto>", "")
+    else
+      String.replace(content, ~r"<ecto>[^<]+</ecto>", "")
+    end
+  end
+
+  defp update_ignore_file_content(new_content, existing_content) do
+    new_content
+    |> String.split("\n\n", trim: true)
+    |> Enum.reduce(existing_content, fn section, content ->
+      [section_name] = Regex.run(~r/(# [^\n]+)/, section, capture: :all_but_first)
+
+      content =
+        if String.match?(content, ~r/#{section_name}/) do
+          [before_section, rest] = String.split(content, "#{section_name}", parts: 2)
+          [_section, rest] = String.split(rest, "\n\n", parts: 2)
+
+          String.trim(before_section) <> "\n\n" <> String.trim(rest)
+        else
+          content
+        end
+
+      content <> "\n\n" <> section
+    end)
+  end
+
+  defp inject_aliases(mix_file, bindings, opts) do
+    Mix.shell().info([:green, "* injecting Mix aliases"])
+
+    aliases = inject_bindings(@aliases, bindings, opts)
+
+    [beginning, rest] = String.split(mix_file, "defp aliases do\n    [", parts: 2)
+    [_aliases, rest_of_mix_file] = String.split(rest, "]\n  end", parts: 2)
+
+    "#{beginning}defp aliases do\n    [\n#{aliases}    ]\n  end#{rest_of_mix_file}"
+  end
+
+  defp inject_project_info(mix_file, bindings, opts) do
+    Mix.shell().info([:green, "* injecting Mix project info"])
+
+    [beginning, rest] = String.split(mix_file, ~r/def project do\n    \[/, parts: 2)
+    [project_part, rest_of_mix_file] = String.split(rest, ~r/,?\n    ]\n  end/, parts: 2)
+    project = project_part <> ","
+
+    updated_project =
+      @project
+      |> inject_bindings(bindings, opts)
+      |> String.split("\n\n", trim: true)
+      |> Enum.reduce(project, fn section, project ->
+        [section_name] = Regex.run(~r/(# [^\n]+)/, section, capture: :all_but_first)
+
+        project =
+          if String.match?(project, ~r/#{section_name}/) do
+            [before_section, project_rest] =
+              String.split(project, "      #{section_name}", parts: 2)
+
+            [_section, project_rest] = String.split(project_rest, "\n\n", parts: 2)
+
+            before_section <> project_rest
+          else
+            project
+          end
+
+        project <> "\n\n" <> section
+      end)
+
+    "#{beginning}def project do\n    \[#{updated_project}    ]\n  end#{rest_of_mix_file}"
+  end
+
+  defp inject_mix_dependencies(content, bindings, opts) do
+    Mix.shell().info([:green, "* injecting Mix dependencies"])
+
+    optimum_deps =
+      @deps
+      |> inject_bindings(bindings, opts)
+      |> String.trim()
+
+    content =
+      String.replace(
+        content,
+        "deps: deps(),",
+        "deps: phoenix_deps() ++ optimum_deps() ++ app_deps(),"
+      )
+
+    if String.match?(content, ~r/defp deps do/) do
+      replacement = ~s"""
+        defp app_deps do
+          []
+        end
+
+        defp optimum_deps do
+          [
+            #{optimum_deps}
+          ]
+        end
+
+        defp phoenix_deps do
+      """
+
+      updated_content = String.replace(content, "  defp deps do\n", replacement)
+      [beginning, rest] = String.split(updated_content, "defp phoenix_deps do", parts: 2)
+      rest = remove_duplicate_deps(rest, optimum_deps)
+
+      "#{beginning}defp phoenix_deps do#{rest}"
+    else
+      [beginning, rest] = String.split(content, "defp optimum_deps do", parts: 2)
+
+      rest =
+        rest
+        |> String.split("end", parts: 2)
+        |> Enum.at(1)
+        |> String.trim_trailing()
+        |> remove_duplicate_deps(optimum_deps)
+
+      ~s"""
+      #{beginning}defp optimum_deps do
+          [
+            #{optimum_deps}
+          ]
+        end#{rest}
+      """
+    end
+  end
+
+  defp remove_duplicate_deps(content, optimum_deps) do
+    ~r/\{:([^,]+)[^\}]+\},?/
+    |> Regex.scan(optimum_deps, capture: :all_but_first)
+    |> Enum.reduce(content, fn [dep], content ->
+      String.replace(content, ~r/\n\s+\{:#{dep}[^\}]+\},?$/m, "")
+    end)
+  end
+
+  defp update_formatter_file(project_root, bindings) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:formatter]} file"])
+
+    path = get_file_path(@file_paths[:formatter], project_root, bindings)
+
+    formatter_file =
+      path
+      |> File.read!()
+      |> String.replace(
+        ~r/(?:DoctestFormatter,[\s\n]+)?Phoenix\.LiveView\.HTMLFormatter/,
+        "DoctestFormatter, Phoenix.LiveView.HTMLFormatter"
+      )
+      |> String.replace(
+        ~r|"\*\.{heex,ex,exs}"(?:,[\s\n]+"\.github/github_workflows\.ex")?|,
+        ~S|"*.{heex,ex,exs}", ".github/github_workflows.ex"|
+      )
+
+    File.write!(path, formatter_file)
+  end
+
+  defp update_gitignore_file(project_root, bindings) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:gitignore]} file"])
+
+    path = get_file_path(@file_paths[:gitignore], project_root, bindings)
+    content = File.read!(path)
+    updated_content = update_ignore_file_content(@gitignore, content)
+    File.write!(path, updated_content)
+  end
+
+  defp create_tool_versions_file(root, project_root, bindings, opts) do
+    file_path = get_file_path(@file_paths[:tool_versions], project_root, bindings)
+    template_path = get_template_path(@file_paths[:tool_versions], root, bindings)
+
+    if File.exists?(file_path) do
+      Mix.shell().info([:yellow, "* updating #{@file_paths[:tool_versions]} file"])
+    else
+      Mix.shell().info([:green, "* creating #{@file_paths[:tool_versions]} file"])
+    end
+
+    template_file =
+      template_path
+      |> File.read!()
+      |> inject_bindings(bindings, opts)
+
+    tools = String.split(template_file, "\n", trim: true)
+
+    File.touch!(file_path)
+
+    content = File.read!(file_path)
+
+    updated_content =
+      Enum.reduce(tools, content, fn tool, content ->
+        [tool_name, _version] = String.split(tool, " ", trim: true)
+
+        if String.contains?(content, tool_name) do
+          String.replace(content, ~r/#{tool_name} [^\n]+/, tool)
+        else
+          content <> tool <> "\n"
+        end
+      end)
+
+    File.write!(file_path, updated_content)
+  end
+
+  defp update_router(project_root, bindings, opts) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:router]} file"])
+
+    path = get_file_path(@file_paths[:router], project_root, bindings)
+
+    content =
+      path
+      |> File.read!()
+      |> String.replace(
+        "plug :put_secure_browser_headers\n",
+        ~s|plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"}\n|
+      )
+
+    health_route =
+      inject_bindings(
+        ~s|resources "/health", <AppName>Web.HealthController, only: [:index]\n|,
+        bindings,
+        opts
+      )
+
+    updated_content =
+      if String.contains?(content, health_route) do
+        content
+      else
+        String.replace(content, ~r/^end/m, "\n" <> health_route <> "end")
+      end
+
+    File.write!(path, updated_content)
+  end
+
+  defp update_config(new_content, content, add_fun, edit_fun) do
+    new_content
+    |> String.split("\n\n", trim: true)
+    |> Enum.reduce(content, fn section, content ->
+      [section_name] = Regex.run(~r/(# [^\n]+)/, section, capture: :all_but_first)
+
+      if String.contains?(content, section_name) do
+        edit_fun.(content, section, section_name)
+      else
+        add_fun.(content, section)
+      end
+    end)
+  end
+
+  defp update_config_file(project_root, bindings, opts) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:config]} file"])
+
+    path = get_file_path(@file_paths[:config], project_root, bindings)
+    content = File.read!(path)
+
+    add_fun = fn content, section ->
+      String.replace(
+        content,
+        "# Import environment specific config.",
+        section <> "\n# Import environment specific config."
+      )
+    end
+
+    edit_fun = fn content, section, section_name ->
+      [before_section, rest] = String.split(content, ~r/\n\n#{section_name}/s, parts: 2)
+      [_section, rest] = String.split(rest, "\n\n", parts: 2)
+      before_section <> "\n\n" <> section <> "\n" <> rest
+    end
+
+    updated_content =
+      @config
+      |> inject_bindings(bindings, opts)
+      |> update_config(content, add_fun, edit_fun)
+
+    File.write!(path, updated_content)
+  end
+
+  defp update_runtime_config_file(project_root, bindings, opts) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:runtime_config]} file"])
+
+    path = get_file_path(@file_paths[:runtime_config], project_root, bindings)
+    runtime_config = inject_bindings(@runtime_config, bindings, opts)
+
+    content =
+      path
+      |> File.read!()
+      |> String.replace(
+        ~r/(if config_env\(\) == :prod do.*)\nend/s,
+        "\\1\n\n" <> runtime_config <> "end"
+      )
+
+    File.write!(path, content)
+  end
+
+  defp update_prod_config_file(project_root, bindings) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:prod_config]} file"])
+
+    path = get_file_path(@file_paths[:prod_config], project_root, bindings)
+    content = File.read!(path)
+
+    add_fun = fn content, section ->
+      content <> "\n" <> section
+    end
+
+    edit_fun = fn content, section, section_name ->
+      [before_section, rest] = String.split(content, ~r/\n\n#{section_name}/s, parts: 2)
+
+      rest =
+        if String.contains?(rest, "\n\n") do
+          [_section, rest] = String.split(rest, "\n\n", parts: 2)
+          rest
+        else
+          ""
+        end
+
+      [before_section, section, rest]
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.join("\n\n")
+    end
+
+    updated_content = update_config(@prod_config, content, add_fun, edit_fun)
+
+    File.write!(path, updated_content)
+  end
+
+  defp update_dockerignore_file(project_root, bindings) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:dockerignore]} file"])
+
+    path = get_file_path(@file_paths[:dockerignore], project_root, bindings)
+    content = File.read!(path)
+    updated_content = update_ignore_file_content(@dockerignore, content)
+    File.write!(path, updated_content)
+  end
+
+  defp update_dockerfile_file(project_root, bindings, versions) do
+    Mix.shell().info([:yellow, "* updating #{@file_paths[:dockerfile]} file"])
+
+    path = get_file_path(@file_paths[:dockerfile], project_root, bindings)
+
+    content =
+      path
+      |> File.read!()
+      |> String.replace(~r/ARG ELIXIR_VERSION=.*/, "ARG ELIXIR_VERSION=#{versions[:elixir]}")
+      |> String.replace(~r/ARG OTP_VERSION=.*/, "ARG OTP_VERSION=#{versions[:otp]}")
+      |> String.replace(~r/COPY rel rel.*RUN mix release\n/s, ~S"""
+      COPY rel rel
+      COPY .git .git
+      RUN cat .git/HEAD | grep "ref: " && (cat .git/HEAD | awk '{print ".git/"$2}' | xargs cat >> priv/REVISION) || cat .git/HEAD >> priv/REVISION
+      RUN mix release
+      """)
+
+    File.write!(path, content)
+  end
+
+  defp setup_project do
+    Mix.shell().info([:green, "* activating mise"])
+
+    System.cmd("mise", ["trust"], env: %{})
+
+    :timer.sleep(1000)
+
+    System.cmd("mise", ["install"], env: %{})
+
+    Mix.shell().info([:green, "* running project setup"])
+
+    System.cmd("mix", ["setup"], env: %{})
+  end
+
+  defp setup_release(root, project_root, bindings, versions, opts) do
+    Mix.shell().info([:green, "* generating release"])
+
+    System.shell("yes 2>/dev/null | mix phx.gen.release --docker")
+
+    update_dockerignore_file(project_root, bindings)
+    update_dockerfile_file(project_root, bindings, versions)
+    create_file(root, project_root, @file_paths[:rel_env], bindings, opts)
+  end
+
+  defp generate_github_workflows do
+    Mix.shell().info([:green, "* generating github workflows"])
+
+    File.rm_rf!(".github/workflows")
+    System.cmd("mix", ["github_workflows.generate"], env: %{})
+  end
+
+  defp format_files do
+    Mix.shell().info([:green, "* formatting files"])
+
+    System.cmd("mix", ["format"], env: %{})
+    System.cmd("mix", ["prettier"], env: %{})
+  end
+end

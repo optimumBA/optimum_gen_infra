@@ -15,7 +15,16 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at <https://hexdocs.pm/optimum_gen_infra>.
+## Docs
 
+- execute `mix docs --formatter html --open`
+
+It will open documentation in your browser.
+
+## Running tests
+
+- run `mix coveralls` or `mix coveralls.html`
+
+## Contributing
+
+Make sure to execute `make ci` in order to run all the checks before committing the code.
