@@ -41,43 +41,39 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   """
 
   @dockerignore ~S"""
-  # GitHub workflows
-  /.github/
-
-  # macOS artifacts
-  .DS_Store
-
   # Optimum development/test artifacts
+  /.github/
+  /node_modules/
   /priv/plts/
+  /screenshots/
+  .credo.exs
+  .DS_Store
   .env
   .env.prod.sample
   .env.sample
   .formatter.exs
+  .gitattributes
+  .gitignore
   .mise.toml
+  .prettierignore
+  .prettierrc.js
+  .sobelow-conf
   .tool-versions
   coveralls.json
   fly.toml
-  README.md
-
-  # Prettier
-  /node_modules/
+  fly.prod.toml
   package.json
   package-lock.json
+  README.md
   """
 
   @gitignore ~S"""
-  # Environment secrets
-  .env
-
-  # macOS artifacts
-  .DS_Store
-
-  # Dialyzer PLT files
-  /priv/plts/*.plt
-  /priv/plts/*.plt.hash
-
-  # Prettier
+  # Optimum development/test artifacts
   /node_modules/
+  /priv/plts/
+  /screenshots/
+  .DS_Store
+  .env
   package.json
   package-lock.json
   """
@@ -212,6 +208,12 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   """
 
   @runtime_config ~S'''
+    appsignal_app_env =
+      System.get_env("APPSIGNAL_APP_ENV") ||
+        raise """
+        environment variable APPSIGNAL_APP_ENV is missing.
+        """
+
     appsignal_push_api_key =
       System.get_env("APPSIGNAL_PUSH_API_KEY") ||
         raise """
@@ -226,6 +228,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       |> String.trim()
 
     config :appsignal, :config,
+      env: appsignal_app_env,
       push_api_key: appsignal_push_api_key,
       revision: appsignal_revision
   '''
@@ -404,16 +407,28 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
       content =
         if String.match?(content, ~r/#{section_name}/) do
-          [before_section, rest] = String.split(content, "#{section_name}", parts: 2)
-          [_section, rest] = String.split(rest, "\n\n", parts: 2)
-
-          String.trim(before_section) <> "\n\n" <> String.trim(rest)
+          remove_existing_ignore_section(content, section_name)
         else
           content
         end
 
       content <> "\n\n" <> section
     end)
+  end
+
+  defp remove_existing_ignore_section(content, section_name) do
+    [before_section, rest] = String.split(content, "#{section_name}", parts: 2)
+
+    after_section =
+      case String.split(rest, "\n\n", parts: 2) do
+        [_section, after_section] ->
+          String.trim(after_section)
+
+        [_section] ->
+          ""
+      end
+
+    String.trim(before_section) <> after_section
   end
 
   defp inject_aliases(mix_file, bindings, opts) do
@@ -591,13 +606,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
     path = get_file_path(@file_paths[:router], project_root, bindings)
 
-    content =
-      path
-      |> File.read!()
-      |> String.replace(
-        "plug :put_secure_browser_headers\n",
-        ~s|plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"}\n|
-      )
+    content = File.read!(path)
 
     health_route =
       inject_bindings(

@@ -181,7 +181,7 @@ defmodule GithubWorkflows do
           with: [
             name: @preview_app_name,
             secrets:
-              "ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }} ADMIN_USERNAME=${{ secrets.ADMIN_USERNAME }} APPSIGNAL_APP_ENV=preview APPSIGNAL_PUSH_API_KEY=${{ secrets.APPSIGNAL_PUSH_API_KEY }} GITHUB_CLIENT_ID=${{ secrets.GH_CLIENT_ID }} GITHUB_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET }} PHX_HOST=${{ env.PHX_HOST }} SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}"
+              "APPSIGNAL_APP_ENV=preview APPSIGNAL_PUSH_API_KEY=${{ secrets.APPSIGNAL_PUSH_API_KEY }} PHX_HOST=${{ env.PHX_HOST }} SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}"
           ]
         ]
       ]
@@ -219,7 +219,7 @@ defmodule GithubWorkflows do
   end
 
   defp dialyzer_job do
-    cache_key_prefix = "${{ runner.os }}-${{ env.elixir-version }}-${{ env.otp-version }}-plt"
+    cache_key_prefix = "${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-plt"
 
     elixir_job("Dialyzer",
       needs: :compile,
@@ -251,24 +251,21 @@ defmodule GithubWorkflows do
     services = Keyword.get(opts, :services)
     steps = Keyword.get(opts, :steps, [])
 
-    cache_key_prefix = "${{ runner.os }}-${{ env.elixir-version }}-${{ env.otp-version }}-mix"
+    cache_key_prefix = "${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-mix"
 
     job = [
       name: name,
       "runs-on": "ubuntu-latest",
-      env: [
-        "elixir-version": "<elixir_version>",
-        "otp-version": "<otp_version>"
-      ],
       steps:
         [
           checkout_step(),
           [
+            id: "setup-beam",
             name: "Set up Elixir",
             uses: "erlef/setup-beam@v1",
             with: [
-              "elixir-version": "${{ env.elixir-version }}",
-              "otp-version": "${{ env.otp-version }}"
+              "version-file": ".tool-versions",
+              "version-type": "strict"
             ]
           ],
           [

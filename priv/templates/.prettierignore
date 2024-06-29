@@ -8,12 +8,16 @@
 /lib/
 /priv/
 /rel/
+/screenshots/
 /test/
 .credo.exs
+.dialyzer_ignore.exs
 .dockerignore
 .env
 .env.prod.sample
 .env.sample
 .formatter.exs
+.gitattributes
 .gitignore
+.iex.exs
 .erl_crash.dump

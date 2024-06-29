@@ -1,9 +1,9 @@
 defmodule <AppName>Web.HealthController do
   @moduledoc false
 
-  use <AppName>Web, :controller
+  use <AppName>Web, :controller<ecto>
 
-  alias Ecto.Adapters.SQL
+  alias Ecto.Adapters.SQL</ecto>
 
   @type conn :: Plug.Conn.t()
   @type params :: map()

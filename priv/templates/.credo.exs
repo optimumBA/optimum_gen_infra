@@ -164,7 +164,7 @@
           {Credo.Check.Warning.WrongTestFileExtension, []},
 
           #
-          # Controversial and experimental checks
+          ## Controversial and experimental checks
           #
           {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
           {Credo.Check.Consistency.UnusedVariableNames, []},

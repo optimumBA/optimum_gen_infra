@@ -1,7 +1,7 @@
 defmodule <AppName>Web.HealthControllerTest do
   use <AppName>Web.ConnCase, async: true
 
-  describe "index" do
+  describe "GET /health" do
     test "returns cluster info", %{conn: conn} do
       conn = get(conn, ~p"/health")
 

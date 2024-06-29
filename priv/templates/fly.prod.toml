@@ -1,5 +1,4 @@
 app = "<fly_app_prefix>"
-
 kill_signal = "SIGTERM"
 primary_region = "iad"
 
