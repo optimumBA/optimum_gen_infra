@@ -7,16 +7,16 @@
 /doc/
 /lib/
 /priv/
-/rel/
+<%= if phoenix do %>/rel/
 /screenshots/
-/test/
+<% end %>/test/
 .credo.exs
 .dialyzer_ignore.exs
-.dockerignore
+<%= if phoenix do %>.dockerignore
 .env
 .env.prod.sample
 .env.sample
-.formatter.exs
+<% end %>.formatter.exs
 .gitattributes
 .gitignore
 .iex.exs

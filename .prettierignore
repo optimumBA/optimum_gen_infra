@@ -9,9 +9,9 @@
 /priv/
 /test/
 .credo.exs
-.dockerignore
-.env
-.env.sample
+.dialyzer_ignore.exs
 .formatter.exs
+.gitattributes
 .gitignore
+.iex.exs
 .erl_crash.dump

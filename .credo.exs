@@ -164,7 +164,7 @@
           {Credo.Check.Warning.WrongTestFileExtension, []},
 
           #
-          # Controversial and experimental checks
+          ## Controversial and experimental checks
           #
           {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
           {Credo.Check.Consistency.UnusedVariableNames, []},
@@ -191,9 +191,13 @@
           {Credo.Check.Refactor.IoPuts, []},
           {Credo.Check.Refactor.MapMap, []},
           {Credo.Check.Refactor.ModuleDependencies,
-           files: %{
-             excluded: ["lib/optimum_gen_infra/mix/tasks/optimum.gen.infra.ex"]
-           }},
+           [
+             files: %{
+               excluded: [
+                 "lib/optimum_gen_infra/mix/tasks/optimum.gen.infra.ex"
+               ]
+             }
+           ]},
           {Credo.Check.Refactor.NegatedIsNil, []},
           {Credo.Check.Refactor.PassAsyncInTestCases, []},
           {Credo.Check.Refactor.PipeChainStart, []},

@@ -1,5 +1,5 @@
-defmodule <AppName>Web.HealthControllerTest do
-  use <AppName>Web.ConnCase, async: true
+defmodule <%= app_name_camel_case %>Web.HealthControllerTest do
+  use <%= app_name_camel_case %>Web.ConnCase, async: true
 
   describe "GET /health" do
     test "returns cluster info", %{conn: conn} do

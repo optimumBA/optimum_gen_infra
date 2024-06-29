@@ -1,24 +1,24 @@
-app = "<fly_app_prefix>-staging"
+app = "<%= fly_app_prefix %>"
 kill_signal = "SIGTERM"
-primary_region = "fra"
+primary_region = "iad"
 
 [build]
 
-[deploy]<ecto>
-release_command = "/app/bin/migrate"</ecto>
-strategy = "bluegreen"
+[deploy]
+<%= if ecto do %>release_command = "/app/bin/migrate"
+<% end %>strategy = "bluegreen"
 
 [env]
-PHX_HOST = "<fly_app_prefix>-staging.fly.dev"
+PHX_HOST = "<%= fly_app_prefix %>.fly.dev"
 PORT = "8080"
-PRIMARY_REGION = "fra"
+PRIMARY_REGION = "iad"
 
 [http_service]
 auto_start_machines = true
-auto_stop_machines = true
+auto_stop_machines = false
 force_https = true
 internal_port = 8080
-min_machines_running = 0
+min_machines_running = 1
 processes = ["app"]
 
 [http_service.concurrency]

@@ -1,0 +1,25 @@
+defmodule <%= app_name_camel_case %>Web.HealthController do
+  @moduledoc false
+
+  use <%= app_name_camel_case %>Web, :controller
+
+  <%= if ecto do %>alias Ecto.Adapters.SQL
+
+  <% end %>@type conn :: Plug.Conn.t()
+  @type params :: map()
+
+  @spec index(conn(), params()) :: conn()
+  def index(conn, _params) do
+    <%= if ecto do %># Return status 500 if unable to connect to DB
+    SQL.query!(<%= app_name_camel_case %>.Repo, "SELECT 1")
+
+    <% end %>{:ok, hostname} = :inet.gethostname()
+
+    json(conn, %{
+      connected_to: Node.list(),
+      hostname: to_string(hostname),
+      node: Node.self(),
+      status: :ok
+    })
+  end
+end

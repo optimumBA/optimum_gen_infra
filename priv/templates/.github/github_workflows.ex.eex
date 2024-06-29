@@ -4,11 +4,11 @@ defmodule GithubWorkflows do
   See https://hexdocs.pm/github_workflows_generator.
   """
 
-  @app_name_prefix "<fly_app_prefix>"
+  <%= if phoenix do %>@app_name_prefix "<%= fly_app_prefix %>"
   @environment_name "pr-${{ github.event.number }}"
   @preview_app_name "#{@app_name_prefix}-#{@environment_name}"
   @preview_app_host "#{@preview_app_name}.fly.dev"
-  @repo_name "<repo_name>"
+  @repo_name "<%= repo_name %>"
 
   def get do
     %{
@@ -80,15 +80,47 @@ defmodule GithubWorkflows do
       dialyzer: dialyzer_job(),
       format: format_job(),
       hex_audit: hex_audit_job(),
-      migrations: migrations_job(),
-      prettier: prettier_job(),
+      <%= if ecto do %>migrations: migrations_job(),
+      <% end %>prettier: prettier_job(),
       sobelow: sobelow_job(),
       test: test_job(),
       unused_deps: unused_deps_job()
     ]
   end
 
-  defp compile_job do
+  <% else %>
+  def get do
+    %{
+      "ci.yml" => ci_workflow()
+    }
+  end
+
+  defp ci_workflow do
+    [
+      [
+        name: "CI",
+        on: [
+          pull_request: [],
+          push: [
+            branches: ["main"]
+          ]
+        ],
+        jobs: [
+          compile: compile_job(),
+          credo: credo_job(),
+          deps_audit: deps_audit_job(),
+          dialyzer: dialyzer_job(),
+          format: format_job(),
+          hex_audit: hex_audit_job(),
+          <%= if ecto do %>migrations: migrations_job(),
+          <% end %>prettier: prettier_job(),
+          test: test_job(),
+          unused_deps: unused_deps_job()
+        ]
+      ]
+    ]
+  end
+  <% end %>defp compile_job do
     elixir_job("Install deps and compile",
       steps: [
         [
@@ -118,7 +150,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp delete_preview_app_job do
+  <%= if phoenix do %>defp delete_preview_app_job do
     [
       name: "Delete preview app",
       "runs-on": "ubuntu-latest",
@@ -205,7 +237,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp deps_audit_job do
+  <% end %>defp deps_audit_job do
     elixir_job("Deps audit",
       needs: :compile,
       steps: [
@@ -248,8 +280,8 @@ defmodule GithubWorkflows do
 
   defp elixir_job(name, opts) do
     needs = Keyword.get(opts, :needs)
-    services = Keyword.get(opts, :services)
-    steps = Keyword.get(opts, :steps, [])
+    <%= if ecto do %>services = Keyword.get(opts, :services)
+    <% end %>steps = Keyword.get(opts, :steps, [])
 
     cache_key_prefix = "${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-mix"
 
@@ -281,6 +313,7 @@ defmodule GithubWorkflows do
         ] ++ steps
     ]
 
+    <%= if ecto do %>
     job
     |> then(fn job ->
       if needs do
@@ -296,6 +329,13 @@ defmodule GithubWorkflows do
         job
       end
     end)
+    <% else %>
+    if needs do
+      Keyword.put(job, :needs, needs)
+    else
+      job
+    end
+    <% end %>
   end
 
   defp format_job do
@@ -324,7 +364,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp migrations_job do
+  <%= if ecto do %>defp migrations_job do
     elixir_job("Migrations",
       needs: :compile,
       services: [
@@ -334,7 +374,7 @@ defmodule GithubWorkflows do
         [
           name: "Setup DB",
           env: [MIX_ENV: "test"],
-          run: "mix ecto.setup"
+          run: "mix do ecto.create --quiet, ecto.migrate --quiet"
         ],
         [
           name: "Check if migrations are reversible",
@@ -345,7 +385,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp prettier_job do
+  <% end %>defp prettier_job do
     [
       name: "Check formatting using Prettier",
       "runs-on": "ubuntu-latest",
@@ -373,7 +413,7 @@ defmodule GithubWorkflows do
     ]
   end
 
-  defp sobelow_job do
+  <%= if phoenix do %>defp sobelow_job do
     elixir_job("Security check",
       needs: :compile,
       steps: [
@@ -386,13 +426,13 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp test_job do
+  <% end %>defp test_job do
     elixir_job("Test",
       needs: :compile,
-      services: [
+      <%= if ecto do %>services: [
         db: db_service()
       ],
-      steps: [
+      <% end %>steps: [
         [
           name: "Run tests",
           env: [
@@ -417,7 +457,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  defp db_service do
+  <%= if ecto do %>defp db_service do
     [
       image: "postgres:13",
       ports: ["5432:5432"],
@@ -427,14 +467,14 @@ defmodule GithubWorkflows do
     ]
   end
 
-  defp checkout_step do
+  <% end %>defp checkout_step do
     [
       name: "Checkout",
       uses: "actions/checkout@v4"
     ]
   end
 
-  defp delete_previous_deployments_step do
+  <%= if phoenix do %>defp delete_previous_deployments_step do
     [
       name: "Delete previous deployments",
       uses: "strumwolf/delete-deployment-environment@v2.2.3",
@@ -447,14 +487,14 @@ defmodule GithubWorkflows do
     ]
   end
 
-  defp cache_opts(prefix) do
+  <% end %>defp cache_opts(prefix) do
     [
       key: "#{prefix}-${{ github.sha }}",
       "restore-keys": ~s"""
       #{prefix}-
       """
     ]
-  end
+  end<%= if phoenix do %>
 
   defp fly_env do
     [
@@ -471,5 +511,5 @@ defmodule GithubWorkflows do
       name: @environment_name,
       url: "https://#{@preview_app_host}"
     ]
-  end
+  end<% end %>
 end

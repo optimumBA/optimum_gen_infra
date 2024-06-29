@@ -11,27 +11,27 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   @aliases ~S"""
         setup: [
           "deps.get",
-          "cmd npm i -D prettier prettier-plugin-toml",<ecto>
-          "ecto.setup",</ecto>
-          "assets.setup",
-          "assets.build"
-        ],<ecto>
-        "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
-        "ecto.reset": ["ecto.drop", "ecto.setup"],
-        test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],</ecto>
-        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-        "assets.build": ["tailwind <app_name>", "esbuild <app_name>"],
-        "assets.deploy": [
-          "tailwind <app_name> --minify",
-          "esbuild <app_name> --minify",
-          "phx.digest"
+          "cmd npm i -D prettier prettier-plugin-toml"<%= if ecto or phoenix do %>,
+          <%= if ecto do %>"ecto.setup",
+          <% end %><%= if phoenix do %>"assets.setup",
+          "assets.build"<% end %><% end %>
         ],
+        <%= if ecto do %>"ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
+        "ecto.reset": ["ecto.drop", "ecto.setup"],
+        test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+        <% end %><%= if phoenix do %>"assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+        "assets.build": ["tailwind <%= app_name %>", "esbuild <%= app_name %>"],
+        "assets.deploy": [
+          "tailwind <%= app_name %> --minify",
+          "esbuild <%= app_name %> --minify",
+          "phx.digest"
+        ],<% end %>
         ci: [
           "deps.unlock --check-unused",
           "deps.audit",
           "hex.audit",
-          "sobelow --config .sobelow-conf",
-          "format --check-formatted",
+          <%= if phoenix do %>"sobelow --config .sobelow-conf",
+          <% end %>"format --check-formatted",
           "cmd npx prettier -c .",
           "credo --strict",
           "dialyzer",
@@ -71,34 +71,38 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   # Optimum development/test artifacts
   /node_modules/
   /priv/plts/
-  /screenshots/
-  .DS_Store
-  .env
-  package.json
+  <%= if phoenix do %>/screenshots/
+  <% end %>.DS_Store
+  <%= if phoenix do %>.env
+  <% end %>package.json
   package-lock.json
   """
 
   @switches [
     ecto: :boolean,
     elixir_version: :string,
-    fly_app_prefix: :string,
     github_url: :string,
     node_version: :string,
-    otp_version: :string
+    otp_version: :string,
+    phoenix: :boolean
+  ]
+
+  @phoenix_switches [
+    fly_app_prefix: :string
   ]
 
   @deps ~S"""
-        {:appsignal_phoenix, "~> 2.3"},
-        {:credo, "~> 1.7", only: :test, runtime: false},
+        <%= if phoenix do %>{:appsignal_phoenix, "~> 2.3"},
+        <% end %>{:credo, "~> 1.7", only: :test, runtime: false},
         {:dialyxir, "~> 1.4", only: :test, runtime: false},
         {:doctest_formatter, "~> 0.3", only: [:dev, :test], runtime: false},
-        {:ex_doc, "~> 0.34", only: :dev, runtime: false},<ecto>
-        {:ex_machina, "~> 2.7", only: :test},</ecto>
-        {:excoveralls, "~> 0.18", only: :test},
-        {:faker, "~> 0.18", only: :test},
-        {:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
-        {:mix_audit, "~> 2.1", only: :test, runtime: false},
-        {:sobelow, "~> 0.13", only: :test, runtime: false}
+        {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+        <%= if ecto do %>{:ex_machina, "~> 2.7", only: :test},
+        <% end %>{:excoveralls, "~> 0.18", only: :test},
+        <%= if ecto do %>{:faker, "~> 0.18", only: :test},
+        <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
+        {:mix_audit, "~> 2.1", only: :test, runtime: false}<%= if phoenix do %>,
+        {:sobelow, "~> 0.13", only: :test, runtime: false}<% end %>
   """
 
   @file_paths [
@@ -152,15 +156,27 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     @file_paths[:sobelow_conf]
   ]
 
+  @phoenix_files [
+    @file_paths[:env],
+    @file_paths[:env_prod_sample],
+    @file_paths[:env_sample],
+    @file_paths[:fly],
+    @file_paths[:fly_prod],
+    @file_paths[:health_controller],
+    @file_paths[:health_controller_test],
+    @file_paths[:mise],
+    @file_paths[:sobelow_conf]
+  ]
+
   @config ~S"""
   # AppSignal
   config :appsignal, :config,
-    active: false,<ecto>
-    ecto_repos: [<AppName>.Repo],</ecto>
-    env: config_env(),
-    ignore_actions: ["<AppName>Web.HealthController#index"],
-    name: "<app_name>",
-    otp_app: :<app_name>
+    active: false,
+    <%= if ecto do %>ecto_repos: [<%= app_name_camel_case %>.Repo],
+    <% end %>env: config_env(),
+    ignore_actions: ["<%= app_name_camel_case %>Web.HealthController#index"],
+    name: "<%= app_name %>",
+    otp_app: :<%= app_name %>
   """
 
   @prod_config ~S"""
@@ -185,26 +201,26 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
           "coveralls.detail": :test,
           "coveralls.html": :test,
           credo: :test,
-          dialyzer: :test,
-          sobelow: :test
+          dialyzer: :test<%= if phoenix do %>,
+          sobelow: :test<% end %>
         ],
         test_coverage: [tool: ExCoveralls],
 
         # Docs
-        name: "<AppName>",
-        source_url: "<GitHub_URL>",
+        name: "<%= app_name_camel_case %>",
+        source_url: "<%= github_url %>",
         docs: [
           extras: ["README.md"],
           main: "readme",
           source_ref: "main"
-        ],
+        ]<%= if phoenix do %>,
 
         # Release
         releases: [
-          <app_name>: [
+          <%= app_name %>: [
             include_executables_for: [:unix]
           ]
-        ]
+        ]<% end %>
   """
 
   @runtime_config ~S'''
@@ -220,7 +236,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         environment variable APPSIGNAL_PUSH_API_KEY is missing.
         """
 
-    revision_file = Path.join([:code.priv_dir(:<app_name>), "REVISION"])
+    revision_file = Path.join([:code.priv_dir(:<%= app_name %>), "REVISION"])
 
     appsignal_revision =
       revision_file
@@ -239,7 +255,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     project_root = Path.expand(".")
 
     opts = validate_opts(args)
-    validate_project(project_root)
+    validate_project(project_root, opts)
 
     versions = get_versions(opts)
     bindings = get_bindings(project_root, opts, versions)
@@ -247,7 +263,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     create_new_files(root, project_root, bindings, opts)
     update_existing_files(root, project_root, bindings, opts)
     setup_project()
-    setup_release(root, project_root, bindings, versions, opts)
+
+    if opts[:phoenix] do
+      setup_release(root, project_root, bindings, versions, opts)
+    end
+
     generate_github_workflows()
     format_files()
   end
@@ -255,23 +275,38 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp validate_opts(args) do
     {opts, _} = OptionParser.parse!(args, strict: @switches)
 
-    Enum.each(@switches, fn {key, _type} ->
+    check_switches(@switches, opts)
+
+    if opts[:phoenix] do
+      {phoenix_opts, _} = OptionParser.parse!(args, strict: @phoenix_switches)
+
+      check_switches(@phoenix_switches, phoenix_opts)
+
+      Keyword.merge(opts, phoenix_opts)
+    else
+      opts
+    end
+  end
+
+  defp check_switches(switches, opts) do
+    Enum.each(switches, fn {key, _type} ->
       unless Keyword.has_key?(opts, key) do
         raise "Option #{key} not set"
       end
     end)
-
-    opts
   end
 
-  defp validate_project(project_root) do
+  defp validate_project(project_root, opts) do
     path = get_file_path(@file_paths[:mix], project_root, [])
 
     File.exists?(path) ||
       raise "Missing file: #{@file_paths[:mix]}. Are you in the right directory?"
 
     project_file = File.read!(path)
-    String.match?(project_file, ~r/\{:phoenix,[^\}]+}/) || raise "Not a Phoenix app."
+
+    if opts[:phoenix] and !String.match?(project_file, ~r/\{:phoenix,[^\}]+}/) do
+      raise "Not a Phoenix app."
+    end
   end
 
   defp get_versions(opts) do
@@ -292,13 +327,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
     [app_name_camel_case] = Regex.run(~r/defmodule ([^\.]+)\./, mix_file, capture: :all_but_first)
     [app_name_snake_case] = Regex.run(~r/app: :([^,]+)/, mix_file, capture: :all_but_first)
-    app_name_with_dash = String.replace(app_name_snake_case, "_", "-")
-
-    app_name = [
-      camel_case: app_name_camel_case,
-      snake_case: app_name_snake_case,
-      with_dash: app_name_with_dash
-    ]
 
     [repo_name] =
       Regex.run(~r|github\.com/[^/]+/(.+)|, Keyword.fetch!(opts, :github_url),
@@ -306,12 +334,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       )
 
     [
-      AppName: app_name[:camel_case],
-      app_name: app_name[:snake_case],
-      "app-name": app_name[:with_dash],
+      app_name: app_name_snake_case,
+      app_name_camel_case: app_name_camel_case,
       elixir_version: versions[:elixir],
-      fly_app_prefix: Keyword.fetch!(opts, :fly_app_prefix),
-      GitHub_URL: Keyword.fetch!(opts, :github_url),
+      fly_app_prefix: Keyword.get(opts, :fly_app_prefix, ""),
+      github_url: Keyword.fetch!(opts, :github_url),
       node_version: versions[:node],
       otp_major_version: versions[:otp_major_version],
       otp_version: versions[:otp],
@@ -333,18 +360,25 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp create_new_files(root, project_root, bindings, opts) do
-    Enum.each(@new_files, fn path -> create_file(root, project_root, path, bindings, opts) end)
+    Enum.each(@new_files, fn path ->
+      if opts[:phoenix] or path not in @phoenix_files do
+        create_file(root, project_root, path, bindings, opts)
+      end
+    end)
   end
 
   defp update_existing_files(root, project_root, bindings, opts) do
     update_mix_file(project_root, bindings, opts)
     update_formatter_file(project_root, bindings)
-    update_gitignore_file(project_root, bindings)
+    update_gitignore_file(project_root, bindings, opts)
     create_tool_versions_file(root, project_root, bindings, opts)
-    update_router(project_root, bindings, opts)
-    update_config_file(project_root, bindings, opts)
-    update_runtime_config_file(project_root, bindings, opts)
-    update_prod_config_file(project_root, bindings)
+
+    if opts[:phoenix] do
+      update_router(project_root, bindings, opts)
+      update_config_file(project_root, bindings, opts)
+      update_runtime_config_file(project_root, bindings, opts)
+      update_prod_config_file(project_root, bindings)
+    end
   end
 
   defp create_file(root, project_root, path, bindings, opts) do
@@ -381,26 +415,25 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp get_template_path(path, root, bindings) do
-    Enum.reduce(bindings, Path.join([root, "priv", "templates", path]), fn {key, _value}, path ->
-      String.replace(path, "<#{key}>", "#{key}")
-    end)
+    path =
+      Enum.reduce(bindings, Path.join([root, "priv", "templates", path]), fn {key, _value},
+                                                                             path ->
+        String.replace(path, "<#{key}>", "#{key}")
+      end)
+
+    path <> ".eex"
   end
 
   defp inject_bindings(content, bindings, opts) do
-    content =
-      Enum.reduce(bindings, content, fn {key, value}, content ->
-        String.replace(content, "<#{key}>", value)
-      end)
-
-    if opts[:ecto] do
-      String.replace(content, ~r"</?ecto>", "")
-    else
-      String.replace(content, ~r"<ecto>[^<]+</ecto>", "")
-    end
+    content
+    |> EEx.compile_string()
+    |> Code.eval_quoted(bindings ++ opts)
+    |> elem(0)
   end
 
-  defp update_ignore_file_content(new_content, existing_content) do
+  defp update_ignore_file_content(new_content, existing_content, bindings, opts) do
     new_content
+    |> inject_bindings(bindings, opts)
     |> String.split("\n\n", trim: true)
     |> Enum.reduce(existing_content, fn section, content ->
       [section_name] = Regex.run(~r/(# [^\n]+)/, section, capture: :all_but_first)
@@ -483,32 +516,22 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       |> String.trim()
 
     content =
-      String.replace(
-        content,
-        "deps: deps(),",
-        "deps: phoenix_deps() ++ optimum_deps() ++ app_deps(),"
-      )
+      if opts[:phoenix] do
+        String.replace(
+          content,
+          "deps: deps(),",
+          "deps: phoenix_deps() ++ optimum_deps() ++ app_deps(),"
+        )
+      else
+        String.replace(
+          content,
+          "deps: deps(),",
+          "deps: optimum_deps() ++ app_deps(),"
+        )
+      end
 
     if String.match?(content, ~r/defp deps do/) do
-      replacement = ~s"""
-        defp app_deps do
-          []
-        end
-
-        defp optimum_deps do
-          [
-            #{optimum_deps}
-          ]
-        end
-
-        defp phoenix_deps do
-      """
-
-      updated_content = String.replace(content, "  defp deps do\n", replacement)
-      [beginning, rest] = String.split(updated_content, "defp phoenix_deps do", parts: 2)
-      rest = remove_duplicate_deps(rest, optimum_deps)
-
-      "#{beginning}defp phoenix_deps do#{rest}"
+      transform_deps(content, optimum_deps, opts)
     else
       [beginning, rest] = String.split(content, "defp optimum_deps do", parts: 2)
 
@@ -529,6 +552,46 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end
   end
 
+  defp transform_deps(content, optimum_deps, phoenix: true) do
+    replacement = ~s"""
+      defp app_deps do
+        []
+      end
+
+      defp optimum_deps do
+        [
+          #{optimum_deps}
+        ]
+      end
+
+      defp phoenix_deps do
+    """
+
+    updated_content = String.replace(content, "  defp deps do\n", replacement)
+    [beginning, rest] = String.split(updated_content, "defp phoenix_deps do", parts: 2)
+    rest_without_duplicates = remove_duplicate_deps(rest, optimum_deps)
+
+    "#{beginning}defp phoenix_deps do#{rest_without_duplicates}"
+  end
+
+  defp transform_deps(content, optimum_deps, _opts) do
+    replacement = ~s"""
+      defp optimum_deps do
+        [
+          #{optimum_deps}
+        ]
+      end
+
+      defp app_deps do
+    """
+
+    updated_content = String.replace(content, "  defp deps do\n", replacement)
+    [beginning, rest] = String.split(updated_content, "defp app_deps do", parts: 2)
+    rest_without_duplicates = remove_duplicate_deps(rest, optimum_deps)
+
+    "#{beginning}defp app_deps do#{rest_without_duplicates}"
+  end
+
   defp remove_duplicate_deps(content, optimum_deps) do
     ~r/\{:([^,]+)[^\}]+\},?/
     |> Regex.scan(optimum_deps, capture: :all_but_first)
@@ -538,9 +601,9 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp update_formatter_file(project_root, bindings) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:formatter]} file"])
-
     path = get_file_path(@file_paths[:formatter], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
 
     formatter_file =
       path
@@ -557,12 +620,13 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     File.write!(path, formatter_file)
   end
 
-  defp update_gitignore_file(project_root, bindings) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:gitignore]} file"])
-
+  defp update_gitignore_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:gitignore], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
+
     content = File.read!(path)
-    updated_content = update_ignore_file_content(@gitignore, content)
+    updated_content = update_ignore_file_content(@gitignore, content, bindings, opts)
     File.write!(path, updated_content)
   end
 
@@ -571,9 +635,9 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     template_path = get_template_path(@file_paths[:tool_versions], root, bindings)
 
     if File.exists?(file_path) do
-      Mix.shell().info([:yellow, "* updating #{@file_paths[:tool_versions]} file"])
+      Mix.shell().info([:yellow, "* updating #{file_path} file"])
     else
-      Mix.shell().info([:green, "* creating #{@file_paths[:tool_versions]} file"])
+      Mix.shell().info([:green, "* creating #{file_path} file"])
     end
 
     template_file =
@@ -602,15 +666,15 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp update_router(project_root, bindings, opts) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:router]} file"])
-
     path = get_file_path(@file_paths[:router], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
 
     content = File.read!(path)
 
     health_route =
       inject_bindings(
-        ~s|resources "/health", <AppName>Web.HealthController, only: [:index]\n|,
+        ~s|resources "/health", <%= app_name_camel_case %>Web.HealthController, only: [:index]\n|,
         bindings,
         opts
       )
@@ -640,9 +704,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp update_config_file(project_root, bindings, opts) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:config]} file"])
-
     path = get_file_path(@file_paths[:config], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
+
     content = File.read!(path)
 
     add_fun = fn content, section ->
@@ -668,9 +733,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp update_runtime_config_file(project_root, bindings, opts) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:runtime_config]} file"])
-
     path = get_file_path(@file_paths[:runtime_config], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
+
     runtime_config = inject_bindings(@runtime_config, bindings, opts)
 
     content =
@@ -685,9 +751,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp update_prod_config_file(project_root, bindings) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:prod_config]} file"])
-
     path = get_file_path(@file_paths[:prod_config], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
+
     content = File.read!(path)
 
     add_fun = fn content, section ->
@@ -715,19 +782,20 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     File.write!(path, updated_content)
   end
 
-  defp update_dockerignore_file(project_root, bindings) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:dockerignore]} file"])
-
+  defp update_dockerignore_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:dockerignore], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
+
     content = File.read!(path)
-    updated_content = update_ignore_file_content(@dockerignore, content)
+    updated_content = update_ignore_file_content(@dockerignore, content, bindings, opts)
     File.write!(path, updated_content)
   end
 
   defp update_dockerfile_file(project_root, bindings, versions) do
-    Mix.shell().info([:yellow, "* updating #{@file_paths[:dockerfile]} file"])
-
     path = get_file_path(@file_paths[:dockerfile], project_root, bindings)
+
+    Mix.shell().info([:yellow, "* updating #{path} file"])
 
     content =
       path
@@ -763,7 +831,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
     System.shell("yes 2>/dev/null | mix phx.gen.release --docker")
 
-    update_dockerignore_file(project_root, bindings)
+    update_dockerignore_file(project_root, bindings, opts)
     update_dockerfile_file(project_root, bindings, versions)
     create_file(root, project_root, @file_paths[:rel_env], bindings, opts)
   end
