@@ -412,7 +412,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
           content
         end
 
-      content <> "\n\n" <> section
+      String.trim(content) <> "\n\n" <> String.trim(section) <> "\n"
     end)
   end
 
@@ -428,7 +428,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
           ""
       end
 
-    String.trim(before_section) <> after_section
+    String.trim(before_section) <> "\n\n" <> after_section
   end
 
   defp inject_aliases(mix_file, bindings, opts) do
