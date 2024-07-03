@@ -27,7 +27,7 @@ defmodule OptimumGenInfra.MixProject do
 
       # Docs
       name: "OptimumGenInfra",
-      source_url: "https://github.com/almirsarajcic/optimum_gen_infra",
+      source_url: "https://github.com/optimumBA/optimum_gen_infra",
       docs: [
         extras: ["README.md"],
         main: "readme",
