@@ -273,12 +273,12 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp validate_opts(args) do
-    {opts, _} = OptionParser.parse!(args, strict: @switches)
+    {opts, _} = OptionParser.parse!(args, switches: @switches)
 
     check_switches(@switches, opts)
 
     if opts[:phoenix] do
-      {phoenix_opts, _} = OptionParser.parse!(args, strict: @phoenix_switches)
+      {phoenix_opts, _} = OptionParser.parse!(args, switches: @phoenix_switches)
 
       check_switches(@phoenix_switches, phoenix_opts)
 
@@ -531,7 +531,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       end
 
     if String.match?(content, ~r/defp deps do/) do
-      transform_deps(content, optimum_deps, opts)
+      transform_deps(content, optimum_deps, opts[:phoenix])
     else
       [beginning, rest] = String.split(content, "defp optimum_deps do", parts: 2)
 
@@ -552,7 +552,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end
   end
 
-  defp transform_deps(content, optimum_deps, phoenix: true) do
+  defp transform_deps(content, optimum_deps, true = _phoenix) do
     replacement = ~s"""
       defp app_deps do
         []
@@ -574,7 +574,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     "#{beginning}defp phoenix_deps do#{rest_without_duplicates}"
   end
 
-  defp transform_deps(content, optimum_deps, _opts) do
+  defp transform_deps(content, optimum_deps, _phoenix) do
     replacement = ~s"""
       defp optimum_deps do
         [
