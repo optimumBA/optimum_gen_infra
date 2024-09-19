@@ -1,30 +1,64 @@
 # OptimumGenInfra
 
-**TODO: Add description**
+Mix task which generates infrastructure code for Elixir apps.
+
+```bash
+mix optimum.gen.infra
+```
+
+### Flags
+
+Required:
+
+- `--ecto` or `--no-ecto`
+- `--elixir-version`
+- `--github-url`
+- `--node-version`
+- `--otp-version`
+- `--phoenix` or `--no-phoenix`
+
+Optional:
+
+- `--fly-app-prefix`
 
 ## Installation
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `optimum_gen_infra` to your list of dependencies in `mix.exs`:
+To install OptimumGenInfra, you will need to purchase a license at [hosted on Code Code Ship](https://hex.codecodeship.com/package/optimum_gen_infra).
 
-```elixir
-def deps do
-  [
-    {:optimum_gen_infra, "~> 0.1.0"}
-  ]
-end
+Once you have purchased a license, follow the installation instructions.
+
+First add `codecodeship` as a Hex repository:
+
+```bash
+mix hex.repo add codecodeship https://hex.codecodeship.com/api/repo --fetch-public-key SHA256:5hyUvvnGT45CntYCrHAOO3tn94l1xz8fUlyQS7qDhxg --auth-key [YOUR AUTH KEY]
 ```
 
-## Docs
+Then install `optimum_gen_infra`:
 
-- execute `mix docs --formatter html --open`
+```bash
+mix archive.install hex optimum_gen_infra --repo codecodeship
+```
 
-It will open documentation in your browser.
+## Examples
 
-## Running tests
+Phoenix apps without database:
 
-- run `mix coveralls` or `mix coveralls.html`
+```bash
+mix optimum.gen.infra --no-ecto --elixir-version 1.17.1 --fly-app-prefix phx-tools --github-url https://github.com/optimumBA/phx.tools --node-version 20.14.0 --otp-version 27.0
+```
 
-## Contributing
+Phoenix apps with a database:
 
-Make sure to execute `make ci` in order to run all the checks before committing the code.
+```bash
+mix optimum.gen.infra --ecto --elixir-version 1.15.8 --fly-app-prefix storydeck --github-url https://github.com/StoryDeckIO/story_deck --node-version 20.14.0 --otp-version 26.2.5
+```
+
+Regular Elixir apps:
+
+```bash
+mix optimum.gen.infra --no-ecto --no-phoenix --elixir-version 1.17.1 --github-url https://github.com/optimumBA/github_workflows_generator --node-version 20.14.0 --otp-version 27.0
+```
+
+## Contact
+
+For any questions contact us at [tools@optimum.ba](mailto:tools@optimum.ba).

@@ -10,6 +10,13 @@ defmodule OptimumGenInfra.MixProject do
       aliases: aliases(),
       deps: optimum_deps() ++ app_deps(),
 
+      # Hex package
+      description: "Generate GitHub Actions workflows",
+      package: package(),
+      hex: [
+        api_url: "https://hex.codecodeship.com/api"
+      ],
+
       # CI
       dialyzer: [
         plt_add_apps: [:ex_unit, :mix],
@@ -27,11 +34,9 @@ defmodule OptimumGenInfra.MixProject do
 
       # Docs
       name: "OptimumGenInfra",
-      source_url: "https://github.com/optimumBA/optimum_gen_infra",
       docs: [
         extras: ["README.md"],
-        main: "readme",
-        source_ref: "main"
+        main: "readme"
       ]
     ]
   end
@@ -40,6 +45,14 @@ defmodule OptimumGenInfra.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp package do
+    [
+      licenses: [],
+      links: %{},
+      maintainers: ["Almir Sarajčić"]
     ]
   end
 
