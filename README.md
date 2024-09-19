@@ -23,7 +23,7 @@ Optional:
 
 ## Installation
 
-To install OptimumGenInfra, you will need to purchase a license at [hosted on Code Code Ship](https://hex.codecodeship.com/package/optimum_gen_infra).
+To install OptimumGenInfra, you will need to purchase a license. OptimumGenInfra is hosted on [Code Code Ship](https://hex.codecodeship.com/package/optimum_gen_infra).
 
 Once you have purchased a license, follow the installation instructions.
 
