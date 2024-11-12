@@ -18,7 +18,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -56,7 +56,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -90,7 +90,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -124,7 +124,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -169,7 +169,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -203,7 +203,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -254,7 +254,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
@@ -288,7 +288,7 @@ jobs:
             otp: 22.3
             runner-image: ubuntu-20.04
           - elixir: 1.17
-            otp: 27.0
+            otp: 27.1
             runner-image: ubuntu-latest
     steps:
       - name: Checkout
