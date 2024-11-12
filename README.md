@@ -10,12 +10,12 @@ mix optimum.gen.infra
 
 Required:
 
+- `--phoenix` or `--no-phoenix`
 - `--ecto` or `--no-ecto`
-- `--elixir-version`
 - `--github-url`
+- `--elixir-version`
 - `--node-version`
 - `--otp-version`
-- `--phoenix` or `--no-phoenix`
 
 Optional:
 
@@ -30,7 +30,9 @@ Once you have purchased a license, follow the installation instructions.
 First add `codecodeship` as a Hex repository:
 
 ```bash
-mix hex.repo add codecodeship https://hex.codecodeship.com/api/repo --fetch-public-key SHA256:5hyUvvnGT45CntYCrHAOO3tn94l1xz8fUlyQS7qDhxg --auth-key [YOUR AUTH KEY]
+mix hex.repo add codecodeship https://hex.codecodeship.com/api/repo \
+  --fetch-public-key SHA256:5hyUvvnGT45CntYCrHAOO3tn94l1xz8fUlyQS7qDhxg \
+  --auth-key [YOUR AUTH KEY]
 ```
 
 Then install `optimum_gen_infra`:
@@ -44,19 +46,39 @@ mix archive.install hex optimum_gen_infra --repo codecodeship
 Phoenix apps without database:
 
 ```bash
-mix optimum.gen.infra --no-ecto --elixir-version 1.17.1 --fly-app-prefix phx-tools --github-url https://github.com/optimumBA/phx.tools --node-version 20.14.0 --otp-version 27.0
+mix optimum.gen.infra \
+  --phoenix \
+  --no-ecto \
+  --github-url https://github.com/optimumBA/phx.tools \
+  --fly-app-prefix phx-tools \
+  --elixir-version 1.17.1 \
+  --node-version 20.14.0 \
+  --otp-version 27.0
 ```
 
 Phoenix apps with a database:
 
 ```bash
-mix optimum.gen.infra --ecto --elixir-version 1.15.8 --fly-app-prefix storydeck --github-url https://github.com/StoryDeckIO/story_deck --node-version 20.14.0 --otp-version 26.2.5
+mix optimum.gen.infra \
+  --phoenix \
+  --ecto \
+  --github-url https://github.com/StoryDeckIO/story_deck \
+  --fly-app-prefix storydeck \
+  --elixir-version 1.15.8 \
+  --node-version 20.14.0 \
+  --otp-version 26.2.5
 ```
 
 Regular Elixir apps:
 
 ```bash
-mix optimum.gen.infra --no-ecto --no-phoenix --elixir-version 1.17.1 --github-url https://github.com/optimumBA/github_workflows_generator --node-version 20.14.0 --otp-version 27.0
+mix optimum.gen.infra \
+  --no-phoenix \
+  --no-ecto \
+  --github-url https://github.com/optimumBA/github_workflows_generator \
+  --elixir-version 1.17.1 \
+  --node-version 20.14.0 \
+  --otp-version 27.0
 ```
 
 ## Contact
