@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- Fixed missing template files errors.
+
 ## 0.1.1 (2024-11-12)
 
 - Fixed typo in README.

@@ -81,6 +81,7 @@ defmodule OptimumGenInfra.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
+      "archive.build": "archive.build --include-dot-files",
       setup: [
         "deps.get",
         "cmd npm i -D prettier prettier-plugin-toml"

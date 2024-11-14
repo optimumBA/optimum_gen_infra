@@ -251,7 +251,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
   @impl Mix.Task
   def run(args, _opts \\ []) do
-    root = Path.expand("../../../../", __DIR__)
     project_root = Path.expand(".")
 
     opts = validate_opts(args)
@@ -260,12 +259,12 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     versions = get_versions(opts)
     bindings = get_bindings(project_root, opts, versions)
 
-    create_new_files(root, project_root, bindings, opts)
-    update_existing_files(root, project_root, bindings, opts)
+    create_new_files(project_root, bindings, opts)
+    update_existing_files(project_root, bindings, opts)
     setup_project()
 
     if opts[:phoenix] do
-      setup_release(root, project_root, bindings, versions, opts)
+      setup_release(project_root, bindings, versions, opts)
     end
 
     generate_github_workflows()
@@ -359,19 +358,19 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     File.write!(mix_file_path, updated_mix_file)
   end
 
-  defp create_new_files(root, project_root, bindings, opts) do
+  defp create_new_files(project_root, bindings, opts) do
     Enum.each(@new_files, fn path ->
       if opts[:phoenix] or path not in @phoenix_files do
-        create_file(root, project_root, path, bindings, opts)
+        create_file(project_root, path, bindings, opts)
       end
     end)
   end
 
-  defp update_existing_files(root, project_root, bindings, opts) do
+  defp update_existing_files(project_root, bindings, opts) do
     update_mix_file(project_root, bindings, opts)
     update_formatter_file(project_root, bindings)
     update_gitignore_file(project_root, bindings, opts)
-    create_tool_versions_file(root, project_root, bindings, opts)
+    create_tool_versions_file(project_root, bindings, opts)
 
     if opts[:phoenix] do
       update_router(project_root, bindings, opts)
@@ -381,14 +380,14 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end
   end
 
-  defp create_file(root, project_root, path, bindings, opts) do
+  defp create_file(project_root, path, bindings, opts) do
     file_path = get_file_path(path, project_root, bindings)
-    template_path = get_template_path(path, root, bindings)
+    template_path = get_template_path(path, bindings)
 
     if File.exists?(file_path) do
-      Mix.shell().info([:yellow, "Updating file #{file_path}."])
+      Mix.shell().info([:yellow, "* updating file #{file_path}"])
     else
-      Mix.shell().info([:green, "Creating file #{file_path}."])
+      Mix.shell().info([:green, "* creating file #{file_path}"])
 
       file_path
       |> String.split(~r/\/[^\/]+$/, parts: 2)
@@ -414,12 +413,13 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end)
   end
 
-  defp get_template_path(path, root, bindings) do
+  defp get_template_path(path, bindings) do
     path =
-      Enum.reduce(bindings, Path.join([root, "priv", "templates", path]), fn {key, _value},
-                                                                             path ->
-        String.replace(path, "<#{key}>", "#{key}")
-      end)
+      Enum.reduce(
+        bindings,
+        Path.join([:code.priv_dir(:optimum_gen_infra), "templates", path]),
+        fn {key, _value}, path -> String.replace(path, "<#{key}>", "#{key}") end
+      )
 
     path <> ".eex"
   end
@@ -603,7 +603,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_formatter_file(project_root, bindings) do
     path = get_file_path(@file_paths[:formatter], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     formatter_file =
       path
@@ -623,21 +623,21 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_gitignore_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:gitignore], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content = File.read!(path)
     updated_content = update_ignore_file_content(@gitignore, content, bindings, opts)
     File.write!(path, updated_content)
   end
 
-  defp create_tool_versions_file(root, project_root, bindings, opts) do
+  defp create_tool_versions_file(project_root, bindings, opts) do
     file_path = get_file_path(@file_paths[:tool_versions], project_root, bindings)
-    template_path = get_template_path(@file_paths[:tool_versions], root, bindings)
+    template_path = get_template_path(@file_paths[:tool_versions], bindings)
 
     if File.exists?(file_path) do
-      Mix.shell().info([:yellow, "* updating #{file_path} file"])
+      Mix.shell().info([:yellow, "* updating file #{file_path}"])
     else
-      Mix.shell().info([:green, "* creating #{file_path} file"])
+      Mix.shell().info([:green, "* creating file #{file_path}"])
     end
 
     template_file =
@@ -668,7 +668,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_router(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:router], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content = File.read!(path)
 
@@ -706,7 +706,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_config_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:config], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content = File.read!(path)
 
@@ -735,7 +735,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_runtime_config_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:runtime_config], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     runtime_config = inject_bindings(@runtime_config, bindings, opts)
 
@@ -753,7 +753,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_prod_config_file(project_root, bindings) do
     path = get_file_path(@file_paths[:prod_config], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content = File.read!(path)
 
@@ -785,7 +785,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_dockerignore_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:dockerignore], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content = File.read!(path)
     updated_content = update_ignore_file_content(@dockerignore, content, bindings, opts)
@@ -795,7 +795,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp update_dockerfile_file(project_root, bindings, versions) do
     path = get_file_path(@file_paths[:dockerfile], project_root, bindings)
 
-    Mix.shell().info([:yellow, "* updating #{path} file"])
+    Mix.shell().info([:yellow, "* updating file #{path}"])
 
     content =
       path
@@ -826,14 +826,14 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     System.cmd("mix", ["setup"], env: %{})
   end
 
-  defp setup_release(root, project_root, bindings, versions, opts) do
+  defp setup_release(project_root, bindings, versions, opts) do
     Mix.shell().info([:green, "* generating release"])
 
     System.shell("yes 2>/dev/null | mix phx.gen.release --docker")
 
     update_dockerignore_file(project_root, bindings, opts)
     update_dockerfile_file(project_root, bindings, versions)
-    create_file(root, project_root, @file_paths[:rel_env], bindings, opts)
+    create_file(project_root, @file_paths[:rel_env], bindings, opts)
   end
 
   defp generate_github_workflows do
