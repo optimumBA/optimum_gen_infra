@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.2
+## 0.1.2 (2024-11-14)
 
 - Fixed missing template files errors.
 
