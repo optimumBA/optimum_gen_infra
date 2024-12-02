@@ -23,19 +23,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Install Elixir dependencies
         env:
           MIX_ENV: test
@@ -44,6 +46,13 @@ jobs:
         env:
           MIX_ENV: test
         run: mix compile
+      - name: Save dependencies cache
+        uses: actions/cache/save@v4
+        with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
+          path: |
+            _build
+            deps
   credo:
     needs: compile
     name: Credo
@@ -61,19 +70,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Check code style
         env:
           MIX_ENV: test
@@ -95,19 +106,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Check for vulnerable Mix dependencies
         env:
           MIX_ENV: test
@@ -129,26 +142,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Restore PLT cache
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v4
         with:
+          key: plt-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: priv/plts
-          key: plt-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            plt-${{ matrix.versions.runner-image }}-
+            plt-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Create PLTs
         env:
           MIX_ENV: test
@@ -157,6 +172,11 @@ jobs:
         env:
           MIX_ENV: test
         run: mix dialyzer
+      - name: Save PLT cache
+        uses: actions/cache/save@v4
+        with:
+          key: plt-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
+          path: priv/plts
   format:
     needs: compile
     name: Format
@@ -174,19 +194,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Check Elixir formatting
         env:
           MIX_ENV: test
@@ -208,19 +230,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Check for retired Hex packages
         env:
           MIX_ENV: test
@@ -232,16 +256,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Restore npm cache
-        uses: actions/cache@v3
+        uses: actions/cache/restore@v4
         id: npm-cache
         with:
+          key: npm-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: node_modules
-          key: ${{ runner.os }}-prettier
+          restore-keys: |
+            npm-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Install Prettier
         if: steps.npm-cache.outputs.cache-hit != 'true'
         run: npm i -D prettier prettier-plugin-toml
       - name: Run Prettier
         run: npx prettier -c .
+      - name: Save npm cache
+        uses: actions/cache/save@v4
+        with:
+          key: npm-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
+          path: node_modules
   test:
     needs: compile
     name: Test
@@ -259,19 +290,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Run tests
         env:
           MIX_ENV: test
@@ -293,19 +326,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set up Elixir
+      - id: setup-beam
+        name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
           elixir-version: ${{ matrix.versions.elixir }}
           otp-version: ${{ matrix.versions.otp }}
-      - uses: actions/cache@v3
+      - name: Restore dependencies cache
+        uses: actions/cache/restore@v4
         with:
+          key: mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-${{ github.sha }}
           path: |
             _build
             deps
-          key: mix-${{ matrix.versions.runner-image }}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}
           restore-keys: |
-            mix-${{ matrix.versions.runner-image }}-
+            mix-${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}-
       - name: Check for unused Mix dependencies
         env:
           MIX_ENV: test
