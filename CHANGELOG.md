@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.3
+## 0.1.3 (2024-12-02)
 
 - Improved caching strategy in GitHub Actions workflow.
 
