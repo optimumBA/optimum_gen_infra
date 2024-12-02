@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Improved caching strategy in GitHub Actions workflow.
+
 ## 0.1.2 (2024-11-14)
 
 - Fixed missing template files errors.

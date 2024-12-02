@@ -4,6 +4,17 @@ defmodule GithubWorkflows do
   See https://hexdocs.pm/github_workflows_generator.
   """
 
+  @cache_version_suffix "${{ runner.os }}-${{ steps.setup-beam.outputs.elixir-version }}-${{ steps.setup-beam.outputs.otp-version }}"
+  @mix_cache_key_prefix "mix-#{@cache_version_suffix}"
+  @mix_cache_path ~S"""
+  _build
+  deps
+  """
+  @npm_cache_key_prefix "npm-#{@cache_version_suffix}"
+  @npm_cache_path "node_modules"
+  @plt_cache_key_prefix "plt-#{@cache_version_suffix}"
+  @plt_cache_path "priv/plts"
+
   def get do
     %{
       "ci.yml" => ci_workflow()
@@ -47,6 +58,11 @@ defmodule GithubWorkflows do
           name: "Compile",
           env: [MIX_ENV: "test"],
           run: "mix compile"
+        ],
+        [
+          name: "Save dependencies cache",
+          uses: "actions/cache/save@v4",
+          with: save_cache_opts(@mix_cache_key_prefix, @mix_cache_path)
         ]
       ]
     )
@@ -84,11 +100,8 @@ defmodule GithubWorkflows do
       steps: [
         [
           name: "Restore PLT cache",
-          uses: "actions/cache@v3",
-          with:
-            [
-              path: "priv/plts"
-            ] ++ cache_opts(prefix: "plt-${{ matrix.versions.runner-image }}")
+          uses: "actions/cache/restore@v4",
+          with: cache_opts(@plt_cache_key_prefix, @plt_cache_path)
         ],
         [
           name: "Create PLTs",
@@ -99,6 +112,11 @@ defmodule GithubWorkflows do
           name: "Run dialyzer",
           env: [MIX_ENV: "test"],
           run: "mix dialyzer"
+        ],
+        [
+          name: "Save PLT cache",
+          uses: "actions/cache/save@v4",
+          with: save_cache_opts(@plt_cache_key_prefix, @plt_cache_path)
         ]
       ]
     )
@@ -132,6 +150,7 @@ defmodule GithubWorkflows do
         [
           checkout_step(),
           [
+            id: "setup-beam",
             name: "Set up Elixir",
             uses: "erlef/setup-beam@v1",
             with: [
@@ -140,14 +159,9 @@ defmodule GithubWorkflows do
             ]
           ],
           [
-            uses: "actions/cache@v3",
-            with:
-              [
-                path: ~S"""
-                _build
-                deps
-                """
-              ] ++ cache_opts(prefix: "mix-${{ matrix.versions.runner-image }}")
+            name: "Restore dependencies cache",
+            uses: "actions/cache/restore@v4",
+            with: cache_opts(@mix_cache_key_prefix, @mix_cache_path)
           ]
         ] ++ steps
     ]
@@ -193,12 +207,9 @@ defmodule GithubWorkflows do
         checkout_step(),
         [
           name: "Restore npm cache",
-          uses: "actions/cache@v3",
+          uses: "actions/cache/restore@v4",
           id: "npm-cache",
-          with: [
-            path: "node_modules",
-            key: "${{ runner.os }}-prettier"
-          ]
+          with: cache_opts(@npm_cache_key_prefix, @npm_cache_path)
         ],
         [
           name: "Install Prettier",
@@ -208,6 +219,11 @@ defmodule GithubWorkflows do
         [
           name: "Run Prettier",
           run: "npx prettier -c ."
+        ],
+        [
+          name: "Save npm cache",
+          uses: "actions/cache/save@v4",
+          with: save_cache_opts(@npm_cache_key_prefix, @npm_cache_path)
         ]
       ]
     ]
@@ -248,14 +264,20 @@ defmodule GithubWorkflows do
     ]
   end
 
-  defp cache_opts(opts) do
-    prefix = Keyword.get(opts, :prefix)
-
+  defp cache_opts(prefix, path) do
     [
-      key: "#{prefix}-${{ matrix.versions.otp }}-${{ matrix.versions.elixir }}-${{ github.sha }}",
+      key: "#{prefix}-${{ github.sha }}",
+      path: path,
       "restore-keys": ~s"""
       #{prefix}-
       """
+    ]
+  end
+
+  defp save_cache_opts(prefix, path) do
+    [
+      key: "#{prefix}-${{ github.sha }}",
+      path: path
     ]
   end
 end
