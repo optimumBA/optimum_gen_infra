@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Switched deployment strategy for staging and preview apps to "immediate".
+
 ## 0.1.3 (2024-12-02)
 
 - Improved caching strategy in GitHub Actions workflow.

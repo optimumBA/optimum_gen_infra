@@ -6,7 +6,7 @@ primary_region = "fra"
 
 [deploy]
 <%= if ecto do %>release_command = "/app/bin/migrate"
-<% end %>strategy = "bluegreen"
+<% end %>strategy = "immediate"
 
 [env]
 PHX_HOST = "<%= fly_app_prefix %>-staging.fly.dev"
