@@ -1,6 +1,8 @@
 # Changelog
 
-## 0.1.4
+## 0.1.5
+
+## 0.1.4 (2024-12-20)
 
 - Switched deployment strategy for staging and preview apps to "immediate".
 

@@ -4,7 +4,7 @@ defmodule OptimumGenInfra.MixProject do
   def project do
     [
       app: :optimum_gen_infra,
-      version: "0.1.3",
+      version: "0.1.4",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
