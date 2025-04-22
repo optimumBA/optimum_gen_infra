@@ -76,9 +76,9 @@ mix optimum.gen.infra \
   --no-phoenix \
   --no-ecto \
   --github-url https://github.com/optimumBA/github_workflows_generator \
-  --elixir-version 1.17.3 \
-  --node-version 20.18.0 \
-  --otp-version 27.1.2
+  --elixir-version 1.18.3 \
+  --node-version 20.19.0 \
+  --otp-version 27.3.3
 ```
 
 ## Contact

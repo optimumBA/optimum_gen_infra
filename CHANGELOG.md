@@ -4,6 +4,7 @@
 
 - Increased Fly.io machines memory to 512 MB.
 - Fixed ignored npm dependencies issue in the assets directory.
+- Upgraded to Elixir 1.18.3, Erlang 27.3.3, and Node.js 20.19.0.
 
 ## 0.1.4 (2024-12-20)
 
