@@ -2,6 +2,8 @@
 
 ## 0.1.5
 
+- Increased Fly.io machines memory to 512 MB.
+
 ## 0.1.4 (2024-12-20)
 
 - Switched deployment strategy for staging and preview apps to "immediate".
