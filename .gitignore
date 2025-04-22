@@ -28,6 +28,6 @@ optimum_gen_infra-*.tar
 # Optimum development/test artifacts
 /node_modules/
 /priv/plts/
+/package.json
+/package-lock.json
 .DS_Store
-package.json
-package-lock.json

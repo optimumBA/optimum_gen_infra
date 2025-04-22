@@ -46,6 +46,8 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   /node_modules/
   /priv/plts/
   /screenshots/
+  /package.json
+  /package-lock.json
   .credo.exs
   .DS_Store
   .env
@@ -62,8 +64,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   coveralls.json
   fly.toml
   fly.prod.toml
-  package.json
-  package-lock.json
   README.md
   """
 
@@ -72,10 +72,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   /node_modules/
   /priv/plts/
   <%= if phoenix do %>/screenshots/
-  <% end %>.DS_Store
+  <% end %>/package.json
+  /package-lock.json
+  .DS_Store
   <%= if phoenix do %>.env
-  <% end %>package.json
-  package-lock.json
+  <% end %>
   """
 
   @switches [
