@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.5
+## 0.1.5 (2025-04-23)
 
 - Increased Fly.io machines memory to 512 MB.
 - Fixed ignored npm dependencies issue in the assets directory.
