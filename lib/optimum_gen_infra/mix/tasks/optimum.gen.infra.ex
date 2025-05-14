@@ -103,13 +103,15 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         <%= if ecto do %>{:faker, "~> 0.18", only: :test},
         <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
         {:mix_audit, "~> 2.1", only: :test, runtime: false}<%= if phoenix do %>,
-        {:sobelow, "~> 0.13", only: :test, runtime: false}<% end %>
+        {:sobelow, "~> 0.13", only: :test, runtime: false},
+        {:tidewave, "~> 0.1", only: :dev}<% end %>
   """
 
   @file_paths [
     config: "config/config.exs",
     coveralls: "coveralls.json",
     credo: ".credo.exs",
+    cursor_mcp: ".cursor/mcp.json",
     dialyzer_ignore: ".dialyzer_ignore.exs",
     dockerfile: "Dockerfile",
     dockerignore: ".dockerignore",
@@ -158,6 +160,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   ]
 
   @phoenix_files [
+    @file_paths[:cursor_mcp],
     @file_paths[:env],
     @file_paths[:env_prod_sample],
     @file_paths[:env_sample],
@@ -266,6 +269,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
     if opts[:phoenix] do
       setup_release(project_root, bindings, versions, opts)
+      setup_tidewave(project_root, bindings)
     end
 
     generate_github_workflows()
@@ -835,6 +839,50 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     update_dockerignore_file(project_root, bindings, opts)
     update_dockerfile_file(project_root, bindings, versions)
     create_file(project_root, @file_paths[:rel_env], bindings, opts)
+  end
+
+  defp setup_tidewave(project_root, bindings) do
+    Mix.shell().info([:green, "* setting up Tidewave"])
+    update_endpoint(project_root, bindings)
+    show_mcp_proxy_instructions()
+  end
+
+  defp update_endpoint(project_root, bindings) do
+    app_name = Keyword.fetch!(bindings, :app_name)
+    path = Path.join(project_root, "lib/#{app_name}_web/endpoint.ex")
+
+    Mix.shell().info([:yellow, "* updating file #{path}"])
+
+    content = File.read!(path)
+
+    tidewave_plug = """
+      if Code.ensure_loaded?(Tidewave) do
+        plug Tidewave
+      end
+
+    """
+
+    updated_content =
+      if String.contains?(content, "plug Tidewave") do
+        content
+      else
+        String.replace(
+          content,
+          ~r/(  # Code reloading.*)/s,
+          tidewave_plug <> "\\1"
+        )
+      end
+
+    File.write!(path, updated_content)
+  end
+
+  defp show_mcp_proxy_instructions do
+    if !System.find_executable("mcp-proxy") do
+      Mix.shell().info([
+        :magenta,
+        "* MCP Proxy needs to be installed manually (https://elixirdrops.net/d/UAo4BtYi)"
+      ])
+    end
   end
 
   defp generate_github_workflows do

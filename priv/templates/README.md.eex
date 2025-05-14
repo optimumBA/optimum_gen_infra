@@ -5,7 +5,8 @@
 - install Elixir, Erlang and Node using [mise](https://mise.jdx.dev)
   - install mise using either `curl https://mise.run | sh` or `brew install mise`
   - make sure to activate it
-  - run `mise install`<%= if ecto do %>
+  - run `mise install`<%= if phoenix do %>
+- install Tidewave MCP Proxy (https://elixirdrops.net/d/UAo4BtYi)<% end %><%= if ecto do %>
 - start PostgreSQL server<% end %><%= if phoenix do %>
 - set environment variables in `.env` (see: [.env.sample](.env.sample))<% end %>
 - run `mix setup`
