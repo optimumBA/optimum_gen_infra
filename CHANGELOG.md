@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (2025-05-14)
+
+- Added automated Tidewave setup for Phoenix apps.
+- Included new Optimum tools:
+  - [cursor_rules](https://elixirdrops.net/d/29oQ4Tub)
+  - [optimum_credo](https://elixirdrops.net/d/AsEtmHUq)
+  - [optimum_templates](https://elixirdrops.net/d/6UJjiKBt)
+
 ## 0.1.5 (2025-04-23)
 
 - Increased Fly.io machines memory to 512 MB.
