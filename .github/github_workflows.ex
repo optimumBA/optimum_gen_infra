@@ -28,7 +28,7 @@ defmodule GithubWorkflows do
         on: [
           pull_request: [],
           push: [
-            branches: ["main"]
+            branches: ["main", "ubuntu-update"]
           ]
         ],
         jobs: [
@@ -136,7 +136,7 @@ defmodule GithubWorkflows do
             [
               elixir: "1.13",
               otp: "22.3",
-              "runner-image": "ubuntu-20.04"
+              "runner-image": "ubuntu-22.04"
             ],
             [
               elixir: "1.18",
