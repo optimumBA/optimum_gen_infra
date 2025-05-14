@@ -17,7 +17,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -100,7 +100,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -136,7 +136,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -188,7 +188,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -224,7 +224,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -284,7 +284,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -320,7 +320,7 @@ jobs:
         versions:
           - elixir: 1.13
             otp: 23.3
-            runner-image: ubuntu-latest
+            runner-image: ubuntu-22.04
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest

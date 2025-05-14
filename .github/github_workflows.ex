@@ -136,7 +136,7 @@ defmodule GithubWorkflows do
             [
               elixir: "1.13",
               otp: "23.3",
-              "runner-image": "ubuntu-latest"
+              "runner-image": "ubuntu-22.04"
             ],
             [
               elixir: "1.18",
