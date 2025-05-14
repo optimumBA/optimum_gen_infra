@@ -79,6 +79,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   <% end %>
   """
 
+  @git_submodules ~S"""
+  https://github.com/optimumBA/cursor_rules .cursor/rules<%= if phoenix do %>
+  https://github.com/optimumBA/optimum_templates priv/templates<% end %>
+  """
+
   @switches [
     ecto: :boolean,
     elixir_version: :string,
@@ -102,7 +107,8 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         <% end %>{:excoveralls, "~> 0.18", only: :test},
         <%= if ecto do %>{:faker, "~> 0.18", only: :test},
         <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
-        {:mix_audit, "~> 2.1", only: :test, runtime: false}<%= if phoenix do %>,
+        {:mix_audit, "~> 2.1", only: :test, runtime: false},
+        {:optimum_credo, "~> 0.1", only: :test, runtime: false}<%= if phoenix do %>,
         {:sobelow, "~> 0.13", only: :test, runtime: false},
         {:tidewave, "~> 0.1", only: :dev}<% end %>
   """
@@ -266,6 +272,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     create_new_files(project_root, bindings, opts)
     update_existing_files(project_root, bindings, opts)
     setup_project()
+    setup_git_submodules(project_root, bindings, opts)
 
     if opts[:phoenix] do
       setup_release(project_root, bindings, versions, opts)
@@ -829,6 +836,31 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     Mix.shell().info([:green, "* running project setup"])
 
     System.cmd("mix", ["setup"], env: %{})
+  end
+
+  defp setup_git_submodules(project_root, bindings, opts) do
+    git_dir = Path.join(project_root, ".git")
+
+    if File.exists?(git_dir) do
+      Mix.shell().info([:green, "* setting up git submodules"])
+
+      @git_submodules
+      |> inject_bindings(bindings, opts)
+      |> String.split("\n")
+      |> Stream.map(&String.trim/1)
+      |> Stream.reject(&(&1 == ""))
+      |> Stream.map(fn line ->
+        [url, path] = String.split(line, " ")
+        {url, path}
+      end)
+      |> Enum.each(fn {url, path} ->
+        System.cmd("git", ["submodule", "add", url, path], cd: project_root, env: %{})
+      end)
+
+      System.cmd("git", ["submodule", "foreach", "git", "pull"], cd: project_root, env: %{})
+    else
+      Mix.shell().info([:yellow, "* not a git repository, skipping submodules"])
+    end
   end
 
   defp setup_release(project_root, bindings, versions, opts) do

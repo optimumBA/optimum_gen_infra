@@ -116,6 +116,9 @@
           {Credo.Check.Readability.UnnecessaryAliasExpansion, []},
           {Credo.Check.Readability.VariableNames, []},
           {Credo.Check.Readability.WithSingleClause, []},
+          {OptimumCredo.Check.Readability.DepsOrder, []},
+          {OptimumCredo.Check.Readability.ImportOrder, []},
+          {OptimumCredo.Check.Readability.TypespecOrder, []},
 
           #
           ## Refactoring Opportunities

@@ -69,7 +69,8 @@ defmodule OptimumGenInfra.MixProject do
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       {:excoveralls, "~> 0.18", only: :test},
       {:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
-      {:mix_audit, "~> 2.1", only: :test, runtime: false}
+      {:mix_audit, "~> 2.1", only: :test, runtime: false},
+      {:optimum_credo, "~> 0.1", only: :test, runtime: false}
     ]
   end
 
