@@ -16,8 +16,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -63,8 +63,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -99,8 +99,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -135,8 +135,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -187,8 +187,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -223,8 +223,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -283,8 +283,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
@@ -319,8 +319,8 @@ jobs:
       matrix:
         versions:
           - elixir: 1.13
-            otp: 22.3
-            runner-image: ubuntu-22.04
+            otp: 23.3
+            runner-image: ubuntu-latest
           - elixir: 1.18
             otp: 27.3
             runner-image: ubuntu-latest
