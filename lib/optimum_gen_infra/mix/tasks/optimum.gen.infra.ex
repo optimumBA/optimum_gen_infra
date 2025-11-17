@@ -80,8 +80,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   """
 
   @git_submodules ~S"""
-  https://github.com/optimumBA/cursor_rules .cursor/rules<%= if phoenix do %>
-  https://github.com/optimumBA/optimum_templates priv/templates<% end %>
+  <%= if phoenix do %>https://github.com/optimumBA/optimum_templates priv/templates<% end %>
   """
 
   @switches [
@@ -117,7 +116,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     config: "config/config.exs",
     coveralls: "coveralls.json",
     credo: ".credo.exs",
-    cursor_mcp: ".cursor/mcp.json",
     dialyzer_ignore: ".dialyzer_ignore.exs",
     dockerfile: "Dockerfile",
     dockerignore: ".dockerignore",
@@ -166,7 +164,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   ]
 
   @phoenix_files [
-    @file_paths[:cursor_mcp],
     @file_paths[:env],
     @file_paths[:env_prod_sample],
     @file_paths[:env_sample],
