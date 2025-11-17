@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 (2025-11-17)
+
+- Upgraded to Elixir 1.19.3, Erlang 28.1.1, and Node.js 22.21.1.
+- Updated Mix CLI configuration to use new `def cli` format (fixes deprecation warning in Elixir 1.19+).
+- Updated Credo to 1.7.13 (fixes Elixir 1.19 compatibility).
+- Configured generated Phoenix apps to pass all checks immediately without manual fixes.
+- Improved error handling to fail immediately if phx.gen.release fails.
+- Made Fly.io deployment setup conditional based on `--fly-app-prefix` flag.
+- Changed installation method from CodeCodeShip to GitHub.
+- Removed Cursor rules and git submodules.
+
 ## 0.2.0 (2025-05-14)
 
 - Added automated Tidewave setup for Phoenix apps.
