@@ -890,7 +890,21 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   defp setup_release(project_root, bindings, versions, opts) do
     Mix.shell().info([:green, "* generating release"])
 
-    System.shell("yes 2>/dev/null | mix phx.gen.release --docker")
+    case System.shell("yes 2>/dev/null | mix phx.gen.release --docker") do
+      {_output, 0} ->
+        :ok
+
+      {output, exit_code} ->
+        raise """
+        mix phx.gen.release --docker failed (exit code: #{exit_code})
+
+        This command is required to generate the Dockerfile and release configuration.
+        Please fix the error and run the generator again.
+
+        Error output:
+        #{output}
+        """
+    end
 
     update_dockerignore_file(project_root, bindings, opts)
     update_dockerfile_file(project_root, bindings, versions)
