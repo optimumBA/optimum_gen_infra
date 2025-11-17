@@ -9,17 +9,7 @@ on:
 jobs:
   compile:
     name: Install deps and compile
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,8 +17,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -56,17 +46,7 @@ jobs:
   credo:
     needs: compile
     name: Credo
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,8 +54,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -92,17 +72,7 @@ jobs:
   deps_audit:
     needs: compile
     name: Deps audit
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -110,8 +80,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -128,17 +98,7 @@ jobs:
   dialyzer:
     needs: compile
     name: Dialyzer
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -146,8 +106,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -180,17 +140,7 @@ jobs:
   format:
     needs: compile
     name: Format
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -198,8 +148,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -216,17 +166,7 @@ jobs:
   hex_audit:
     needs: compile
     name: Hex audit
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -234,8 +174,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -276,17 +216,7 @@ jobs:
   test:
     needs: compile
     name: Test
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -294,8 +224,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:
@@ -312,17 +242,7 @@ jobs:
   unused_deps:
     needs: compile
     name: Check unused deps
-    runs-on: ${{ matrix.versions.runner-image }}
-    strategy:
-      fail-fast: false
-      matrix:
-        versions:
-          - elixir: 1.13
-            otp: 24.2
-            runner-image: ubuntu-22.04
-          - elixir: 1.18
-            otp: 27.3
-            runner-image: ubuntu-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -330,8 +250,8 @@ jobs:
         name: Set up Elixir
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: ${{ matrix.versions.elixir }}
-          otp-version: ${{ matrix.versions.otp }}
+          version-file: .tool-versions
+          version-type: strict
       - name: Restore dependencies cache
         uses: actions/cache/restore@v4
         with:

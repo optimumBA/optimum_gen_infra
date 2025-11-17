@@ -128,24 +128,7 @@ defmodule GithubWorkflows do
 
     job = [
       name: name,
-      "runs-on": "${{ matrix.versions.runner-image }}",
-      strategy: [
-        "fail-fast": false,
-        matrix: [
-          versions: [
-            [
-              elixir: "1.13",
-              otp: "24.2",
-              "runner-image": "ubuntu-22.04"
-            ],
-            [
-              elixir: "1.18",
-              otp: "27.3",
-              "runner-image": "ubuntu-latest"
-            ]
-          ]
-        ]
-      ],
+      "runs-on": "ubuntu-latest",
       steps:
         [
           checkout_step(),
@@ -154,8 +137,8 @@ defmodule GithubWorkflows do
             name: "Set up Elixir",
             uses: "erlef/setup-beam@v1",
             with: [
-              "elixir-version": "${{ matrix.versions.elixir }}",
-              "otp-version": "${{ matrix.versions.otp }}"
+              "version-file": ".tool-versions",
+              "version-type": "strict"
             ]
           ],
           [

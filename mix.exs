@@ -5,7 +5,7 @@ defmodule OptimumGenInfra.MixProject do
     [
       app: :optimum_gen_infra,
       version: "0.2.0",
-      elixir: "~> 1.11",
+      elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: optimum_deps() ++ app_deps(),
@@ -22,21 +22,15 @@ defmodule OptimumGenInfra.MixProject do
         plt_add_apps: [:ex_unit, :mix],
         plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
       ],
-      preferred_cli_env: [
-        ci: :test,
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.html": :test,
-        credo: :test,
-        dialyzer: :test
-      ],
       test_coverage: [tool: ExCoveralls],
 
       # Docs
       name: "OptimumGenInfra",
+      source_url: "https://github.com/optimumBA/optimum_gen_infra",
       docs: [
         extras: ["README.md"],
-        main: "readme"
+        main: "readme",
+        source_ref: "main"
       ]
     ]
   end
@@ -45,6 +39,19 @@ defmodule OptimumGenInfra.MixProject do
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [
+        ci: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        credo: :test,
+        dialyzer: :test
+      ]
     ]
   end
 

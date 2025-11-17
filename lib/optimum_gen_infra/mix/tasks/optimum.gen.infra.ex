@@ -205,15 +205,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
           plt_add_apps: [:ex_unit, :mix],
           plt_file: {:no_warn, "priv/plts/dialyzer.plt"}
         ],
-        preferred_cli_env: [
-          ci: :test,
-          coveralls: :test,
-          "coveralls.detail": :test,
-          "coveralls.html": :test,
-          credo: :test,
-          dialyzer: :test<%= if phoenix do %>,
-          sobelow: :test<% end %>
-        ],
         test_coverage: [tool: ExCoveralls],
 
         # Docs
@@ -231,6 +222,20 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
             include_executables_for: [:unix]
           ]
         ]<% end %>
+  """
+
+  @cli ~S"""
+    [
+      preferred_envs: [
+        ci: :test,
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.html": :test,
+        credo: :test,
+        dialyzer: :test<%= if phoenix do %>,
+        sobelow: :test<% end %>
+      ]
+    ]
   """
 
   @runtime_config ~S'''
@@ -284,12 +289,13 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp validate_opts(args) do
-    {opts, _} = OptionParser.parse!(args, switches: @switches)
+    {opts, _remaining_args} = OptionParser.parse!(args, switches: @switches)
 
     check_switches(@switches, opts)
 
     if opts[:phoenix] do
-      {phoenix_opts, _} = OptionParser.parse!(args, switches: @phoenix_switches)
+      {phoenix_opts, _remaining_phoenix_args} =
+        OptionParser.parse!(args, switches: @phoenix_switches)
 
       check_switches(@phoenix_switches, phoenix_opts)
 
@@ -364,6 +370,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     updated_mix_file =
       mix_file
       |> inject_aliases(bindings, opts)
+      |> inject_cli(bindings, opts)
       |> inject_project_info(bindings, opts)
       |> inject_mix_dependencies(bindings, opts)
 
@@ -485,6 +492,26 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     [_aliases, rest_of_mix_file] = String.split(rest, "]\n  end", parts: 2)
 
     "#{beginning}defp aliases do\n    [\n#{aliases}    ]\n  end#{rest_of_mix_file}"
+  end
+
+  defp inject_cli(mix_file, bindings, opts) do
+    Mix.shell().info([:green, "* injecting Mix CLI config"])
+
+    cli_config = inject_bindings(@cli, bindings, opts)
+
+    if String.contains?(mix_file, "def cli do") do
+      [beginning, rest] = String.split(mix_file, ~r/def cli do\n    \[/, parts: 2)
+      [_cli, rest_of_mix_file] = String.split(rest, ~r/\]\n  end/, parts: 2)
+
+      "#{beginning}def cli do\n#{cli_config}  end#{rest_of_mix_file}"
+    else
+      String.replace(
+        mix_file,
+        ~r/(  def application do\n.*?\n  end\n)/s,
+        "\\1\n  def cli do\n#{cli_config}  end\n",
+        global: false
+      )
+    end
   end
 
   defp inject_project_info(mix_file, bindings, opts) do
