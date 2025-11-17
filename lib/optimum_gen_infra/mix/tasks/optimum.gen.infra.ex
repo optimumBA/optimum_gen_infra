@@ -167,12 +167,15 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     @file_paths[:env],
     @file_paths[:env_prod_sample],
     @file_paths[:env_sample],
-    @file_paths[:fly],
-    @file_paths[:fly_prod],
     @file_paths[:health_controller],
     @file_paths[:health_controller_test],
     @file_paths[:mise],
     @file_paths[:sobelow_conf]
+  ]
+
+  @deploy_files [
+    @file_paths[:fly],
+    @file_paths[:fly_prod]
   ]
 
   @config ~S"""
@@ -277,7 +280,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     setup_git_submodules(project_root, bindings, opts)
 
     if opts[:phoenix] do
-      setup_release(project_root, bindings, versions, opts)
+      if opts[:fly_app_prefix] not in [nil, ""] do
+        setup_release(project_root, bindings, versions, opts)
+      end
+
       setup_tidewave(project_root, bindings)
     end
 
@@ -293,8 +299,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     if opts[:phoenix] do
       {phoenix_opts, _remaining_phoenix_args} =
         OptionParser.parse!(args, switches: @phoenix_switches)
-
-      check_switches(@phoenix_switches, phoenix_opts)
 
       Keyword.merge(opts, phoenix_opts)
     else
@@ -347,11 +351,14 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         capture: :all_but_first
       )
 
+    fly_app_prefix = Keyword.get(opts, :fly_app_prefix, "")
+
     [
       app_name: app_name_snake_case,
       app_name_camel_case: app_name_camel_case,
+      deploy: fly_app_prefix not in [nil, ""],
       elixir_version: versions[:elixir],
-      fly_app_prefix: Keyword.get(opts, :fly_app_prefix, ""),
+      fly_app_prefix: fly_app_prefix,
       github_url: Keyword.fetch!(opts, :github_url),
       node_version: versions[:node],
       otp_major_version: versions[:otp_major_version],
@@ -375,9 +382,18 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp create_new_files(project_root, bindings, opts) do
+    deploy? = opts[:fly_app_prefix] not in [nil, ""]
+
     Enum.each(@new_files, fn path ->
-      if opts[:phoenix] or path not in @phoenix_files do
-        create_file(project_root, path, bindings, opts)
+      cond do
+        path in @deploy_files and not deploy? ->
+          :skip
+
+        path in @phoenix_files and not opts[:phoenix] ->
+          :skip
+
+        true ->
+          create_file(project_root, path, bindings, opts)
       end
     end)
   end
@@ -425,7 +441,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
   defp get_file_path(path, project_root, bindings) do
     Enum.reduce(bindings, Path.join(project_root, path), fn {key, value}, path ->
-      String.replace(path, "<#{key}>", value)
+      if is_binary(value) do
+        String.replace(path, "<#{key}>", value)
+      else
+        path
+      end
     end)
   end
 

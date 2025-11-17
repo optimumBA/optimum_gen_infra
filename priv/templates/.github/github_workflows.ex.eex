@@ -15,21 +15,21 @@ defmodule GithubWorkflows do
   @plt_cache_key_prefix "plt-#{@cache_version_suffix}"
   @plt_cache_path "priv/plts"
 
-  <%= if phoenix do %>@app_name_prefix "<%= fly_app_prefix %>"
+  <%= if phoenix do %><%= if deploy do %>@app_name_prefix "<%= fly_app_prefix %>"
   @environment_name "pr-${{ github.event.number }}"
   @preview_app_name "#{@app_name_prefix}-#{@environment_name}"
   @preview_app_host "#{@preview_app_name}.fly.dev"
   @repo_name "<%= repo_name %>"
 
-  def get do
+  <% end %>def get do
     %{
-      "main.yml" => main_workflow(),
+      <%= if deploy do %>"main.yml" => main_workflow(),
       "pr.yml" => pr_workflow(),
-      "pr_closure.yml" => pr_closure_workflow()
+      "pr_closure.yml" => pr_closure_workflow()<% else %>"ci.yml" => ci_workflow()<% end %>
     }
   end
 
-  defp main_workflow do
+  <%= if deploy do %>defp main_workflow do
     [
       [
         name: "Main",
@@ -82,6 +82,22 @@ defmodule GithubWorkflows do
       ]
     ]
   end
+
+  <% else %>defp ci_workflow do
+    [
+      [
+        name: "CI",
+        on: [
+          pull_request: [],
+          push: [
+            branches: ["main"]
+          ]
+        ],
+        jobs: elixir_ci_jobs()
+      ]
+    ]
+  end
+  <% end %>
 
   defp elixir_ci_jobs do
     [
@@ -166,7 +182,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  <%= if phoenix do %>defp delete_preview_app_job do
+  <%= if phoenix do %><%= if deploy do %>defp delete_preview_app_job do
     [
       name: "Delete preview app",
       "runs-on": "ubuntu-latest",
@@ -253,7 +269,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  <% end %>defp deps_audit_job do
+  <% end %><% end %>defp deps_audit_job do
     elixir_job("Deps audit",
       needs: :compile,
       steps: [
@@ -485,7 +501,7 @@ defmodule GithubWorkflows do
     ]
   end
 
-  <%= if phoenix do %>defp delete_previous_deployments_step do
+  <%= if phoenix do %><%= if deploy do %>defp delete_previous_deployments_step do
     [
       name: "Delete previous deployments",
       uses: "strumwolf/delete-deployment-environment@v2.2.3",
@@ -498,7 +514,7 @@ defmodule GithubWorkflows do
     ]
   end
 
-  <% end %>defp cache_opts(prefix, path) do
+  <% end %><% end %>defp cache_opts(prefix, path) do
     [
       key: "#{prefix}-${{ github.sha }}",
       path: path,
@@ -513,7 +529,7 @@ defmodule GithubWorkflows do
       key: "#{prefix}-${{ github.sha }}",
       path: path
     ]
-  end<%= if phoenix do %>
+  end<%= if phoenix do %><%= if deploy do %>
 
   defp fly_env do
     [
@@ -530,5 +546,5 @@ defmodule GithubWorkflows do
       name: @environment_name,
       url: "https://#{@preview_app_host}"
     ]
-  end<% end %>
+  end<% end %><% end %>
 end

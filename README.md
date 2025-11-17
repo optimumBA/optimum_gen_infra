@@ -19,7 +19,7 @@ Required:
 
 Optional:
 
-- `--fly-app-prefix`
+- `--fly-app-prefix` - When provided, enables Fly.io deployment setup (preview apps, staging deployment, Docker files)
 
 ## Installation
 
@@ -30,6 +30,19 @@ mix archive.install github optimumBA/optimum_gen_infra
 ```
 
 ## Examples
+
+Phoenix apps with database and Fly.io deployment:
+
+```bash
+mix optimum.gen.infra \
+  --phoenix \
+  --ecto \
+  --github-url https://github.com/StoryDeckIO/story_deck \
+  --fly-app-prefix storydeck \
+  --elixir-version 1.19.3 \
+  --node-version 22.21.1 \
+  --otp-version 28.1.1
+```
 
 Phoenix apps without database:
 
@@ -44,14 +57,13 @@ mix optimum.gen.infra \
   --otp-version 28.1.1
 ```
 
-Phoenix apps with a database:
+Phoenix apps without Fly.io deployment:
 
 ```bash
 mix optimum.gen.infra \
   --phoenix \
   --ecto \
   --github-url https://github.com/StoryDeckIO/story_deck \
-  --fly-app-prefix storydeck \
   --elixir-version 1.19.3 \
   --node-version 22.21.1 \
   --otp-version 28.1.1
