@@ -23,22 +23,10 @@ Optional:
 
 ## Installation
 
-To install OptimumGenInfra, you will need to purchase a license. OptimumGenInfra is hosted on [Code Code Ship](https://hex.codecodeship.com/package/optimum_gen_infra).
-
-Once you have purchased a license, follow the installation instructions.
-
-First add `codecodeship` as a Hex repository:
+Install OptimumGenInfra directly from GitHub:
 
 ```bash
-mix hex.repo add codecodeship https://hex.codecodeship.com/api/repo \
-  --fetch-public-key SHA256:5hyUvvnGT45CntYCrHAOO3tn94l1xz8fUlyQS7qDhxg \
-  --auth-key [YOUR AUTH KEY]
-```
-
-Then install `optimum_gen_infra`:
-
-```bash
-mix archive.install hex optimum_gen_infra --repo codecodeship
+mix archive.install github optimumBA/optimum_gen_infra
 ```
 
 ## Examples
