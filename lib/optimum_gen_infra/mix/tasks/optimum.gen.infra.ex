@@ -107,7 +107,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         <%= if ecto do %>{:faker, "~> 0.18", only: :test},
         <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
         {:mix_audit, "~> 2.1", only: :test, runtime: false},
-        {:optimum_credo, "~> 0.1", only: :test, runtime: false}<%= if phoenix do %>,
+        {:optimum_credo, "~> 0.2", only: :test, runtime: false}<%= if phoenix do %>,
         {:sobelow, "~> 0.13", only: :test, runtime: false},
         {:tidewave, "~> 0.1", only: :dev}<% end %>
   """

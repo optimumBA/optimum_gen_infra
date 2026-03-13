@@ -138,6 +138,8 @@
           {Credo.Check.Readability.VariableNames, []},
           {Credo.Check.Readability.WithSingleClause, []},
           {OptimumCredo.Check.Readability.DepsOrder, []},
+          {OptimumCredo.Check.Readability.DocumentationFormatting, []},
+          {OptimumCredo.Check.Readability.ExtractableSpecTypes, []},
           {OptimumCredo.Check.Readability.ImportOrder, [
             files: %{
               excluded: [
@@ -147,7 +149,11 @@
               ]
             }
           ]},
+          {OptimumCredo.Check.Readability.ModuleOrganization, []},
+          {OptimumCredo.Check.Readability.PrivateFunctionSpecs, []},
           {OptimumCredo.Check.Readability.TypespecOrder, []},
+          {OptimumCredo.Check.Readability.UnusedTypes, []},
+          {OptimumCredo.Check.Readability.VerboseAssertions, []},
 
           #
           ## Refactoring Opportunities
