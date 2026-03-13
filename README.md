@@ -39,9 +39,9 @@ mix optimum.gen.infra \
   --ecto \
   --github-url https://github.com/StoryDeckIO/story_deck \
   --fly-app-prefix storydeck \
-  --elixir-version 1.19.3 \
-  --node-version 22.21.1 \
-  --otp-version 28.1.1
+  --elixir-version 1.19.5 \
+  --node-version 24.14.0 \
+  --otp-version 28.4.1
 ```
 
 Phoenix apps without database:
@@ -52,9 +52,9 @@ mix optimum.gen.infra \
   --no-ecto \
   --github-url https://github.com/optimumBA/phx.tools \
   --fly-app-prefix phx-tools \
-  --elixir-version 1.19.3 \
-  --node-version 22.21.1 \
-  --otp-version 28.1.1
+  --elixir-version 1.19.5 \
+  --node-version 24.14.0 \
+  --otp-version 28.4.1
 ```
 
 Phoenix apps without Fly.io deployment:
@@ -64,9 +64,9 @@ mix optimum.gen.infra \
   --phoenix \
   --ecto \
   --github-url https://github.com/StoryDeckIO/story_deck \
-  --elixir-version 1.19.3 \
-  --node-version 22.21.1 \
-  --otp-version 28.1.1
+  --elixir-version 1.19.5 \
+  --node-version 24.14.0 \
+  --otp-version 28.4.1
 ```
 
 Regular Elixir apps:
@@ -76,9 +76,9 @@ mix optimum.gen.infra \
   --no-phoenix \
   --no-ecto \
   --github-url https://github.com/optimumBA/github_workflows_generator \
-  --elixir-version 1.19.3 \
-  --node-version 22.21.1 \
-  --otp-version 28.1.1
+  --elixir-version 1.19.5 \
+  --node-version 24.14.0 \
+  --otp-version 28.4.1
 ```
 
 ## Contact
