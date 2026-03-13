@@ -15,107 +15,6 @@ defmodule GithubWorkflows do
   @plt_cache_key_prefix "plt-#{@cache_version_suffix}"
   @plt_cache_path "priv/plts"
 
-  <%= if phoenix do %><%= if deploy do %>@app_name_prefix "<%= fly_app_prefix %>"
-  @environment_name "pr-${{ github.event.number }}"
-  @preview_app_name "#{@app_name_prefix}-#{@environment_name}"
-  @preview_app_host "#{@preview_app_name}.fly.dev"
-  @repo_name "<%= repo_name %>"
-
-  <% end %>def get do
-    %{
-      <%= if deploy do %>"main.yml" => main_workflow(),
-      "pr.yml" => pr_workflow(),
-      "pr_closure.yml" => pr_closure_workflow()<% else %>"ci.yml" => ci_workflow()<% end %>
-    }
-  end
-
-  <%= if deploy do %>defp main_workflow do
-    [
-      [
-        name: "Main",
-        on: [
-          push: [
-            branches: ["main"]
-          ]
-        ],
-        jobs:
-          elixir_ci_jobs() ++
-            [
-              deploy_staging_app: deploy_staging_app_job()
-            ]
-      ]
-    ]
-  end
-
-  defp pr_workflow do
-    [
-      [
-        name: "PR",
-        on: [
-          pull_request: [
-            branches: ["main"],
-            types: ["opened", "reopened", "synchronize"]
-          ]
-        ],
-        jobs:
-          elixir_ci_jobs() ++
-            [
-              deploy_preview_app: deploy_preview_app_job()
-            ]
-      ]
-    ]
-  end
-
-  defp pr_closure_workflow do
-    [
-      [
-        name: "PR closure",
-        on: [
-          pull_request: [
-            branches: ["main"],
-            types: ["closed"]
-          ]
-        ],
-        jobs: [
-          delete_preview_app: delete_preview_app_job()
-        ]
-      ]
-    ]
-  end
-
-  <% else %>defp ci_workflow do
-    [
-      [
-        name: "CI",
-        on: [
-          pull_request: [],
-          push: [
-            branches: ["main"]
-          ]
-        ],
-        jobs: elixir_ci_jobs()
-      ]
-    ]
-  end
-  <% end %>
-
-  defp elixir_ci_jobs do
-    [
-      compile: compile_job(),
-      credo: credo_job(),
-      deps_audit: deps_audit_job(),
-      dialyzer: dialyzer_job(),
-      format: format_job(),
-      hex_audit: hex_audit_job(),
-      <%= if ecto do %>migrations: migrations_job(),
-      <% end %>prettier: prettier_job(),
-      sobelow: sobelow_job(),
-      test: test_job(),
-      unused_deps: unused_deps_job()
-    ]
-  end
-
-  <% else %>
   def get do
     %{
       "ci.yml" => ci_workflow()
@@ -132,22 +31,44 @@ defmodule GithubWorkflows do
             branches: ["main"]
           ]
         ],
-        jobs: [
-          compile: compile_job(),
-          credo: credo_job(),
-          deps_audit: deps_audit_job(),
-          dialyzer: dialyzer_job(),
-          format: format_job(),
-          hex_audit: hex_audit_job(),
-          <%= if ecto do %>migrations: migrations_job(),
-          <% end %>prettier: prettier_job(),
-          test: test_job(),
-          unused_deps: unused_deps_job()
-        ]
+        jobs: elixir_ci_jobs()
       ]
     ]
   end
-  <% end %>defp compile_job do
+
+  <%= if phoenix do %>defp elixir_ci_jobs do
+    [
+      compile: compile_job(),
+      credo: credo_job(),
+      deps_audit: deps_audit_job(),
+      dialyzer: dialyzer_job(),
+      format: format_job(),
+      hex_audit: hex_audit_job(),
+      <%= if ecto do %>migrations: migrations_job(),
+      <% end %>prettier: prettier_job(),
+      sobelow: sobelow_job(),
+      test: test_job(),
+      unused_deps: unused_deps_job()
+    ]
+  end
+
+  <% else %>defp elixir_ci_jobs do
+    [
+      compile: compile_job(),
+      credo: credo_job(),
+      deps_audit: deps_audit_job(),
+      dialyzer: dialyzer_job(),
+      format: format_job(),
+      hex_audit: hex_audit_job(),
+      <%= if ecto do %>migrations: migrations_job(),
+      <% end %>prettier: prettier_job(),
+      test: test_job(),
+      unused_deps: unused_deps_job()
+    ]
+  end
+  <% end %>
+
+  defp compile_job do
     elixir_job("Install deps and compile",
       steps: [
         [
@@ -182,94 +103,7 @@ defmodule GithubWorkflows do
     )
   end
 
-  <%= if phoenix do %><%= if deploy do %>defp delete_preview_app_job do
-    [
-      name: "Delete preview app",
-      "runs-on": "ubuntu-latest",
-      concurrency: [group: "pr-${{ github.event.number }}"],
-      steps: [
-        checkout_step(),
-        [
-          name: "Delete preview app",
-          uses: "optimumBA/fly-preview-apps@main",
-          env: [
-            FLY_API_TOKEN: "${{ secrets.FLY_API_TOKEN }}",
-            REPO_NAME: @repo_name
-          ],
-          with: [
-            name: @preview_app_name
-          ]
-        ],
-        [
-          name: "Generate token",
-          uses: "navikt/github-app-token-generator@v1.1.1",
-          id: "generate_token",
-          with: [
-            "app-id": "${{ secrets.GH_APP_ID }}",
-            "private-key": "${{ secrets.GH_APP_PRIVATE_KEY }}"
-          ]
-        ],
-        [
-          name: "Delete GitHub environment",
-          uses: "strumwolf/delete-deployment-environment@v2.2.3",
-          with: [
-            token: "${{ steps.generate_token.outputs.token  }}",
-            environment: @environment_name,
-            ref: "${{ github.head_ref }}"
-          ]
-        ]
-      ]
-    ]
-  end
-
-  defp deploy_job(env, opts) do
-    [
-      name: "Deploy #{env} app",
-      needs: Enum.map(elixir_ci_jobs(), &elem(&1, 0)),
-      "runs-on": "ubuntu-latest"
-    ] ++ opts
-  end
-
-  defp deploy_preview_app_job do
-    deploy_job("preview",
-      permissions: "write-all",
-      concurrency: [group: @environment_name],
-      environment: preview_app_environment(),
-      steps: [
-        checkout_step(),
-        delete_previous_deployments_step(),
-        [
-          name: "Deploy preview app",
-          uses: "optimumBA/fly-preview-apps@main",
-          env: fly_env(),
-          with: [
-            name: @preview_app_name,
-            secrets:
-              "APPSIGNAL_APP_ENV=preview APPSIGNAL_PUSH_API_KEY=${{ secrets.APPSIGNAL_PUSH_API_KEY }} PHX_HOST=${{ env.PHX_HOST }} SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}"
-          ]
-        ]
-      ]
-    )
-  end
-
-  defp deploy_staging_app_job do
-    deploy_job("staging",
-      steps: [
-        checkout_step(),
-        [
-          uses: "superfly/flyctl-actions/setup-flyctl@master"
-        ],
-        [
-          run: "flyctl deploy --remote-only",
-          env: [
-            FLY_API_TOKEN: "${{ secrets.FLY_API_TOKEN }}"
-          ]
-        ]
-      ]
-    )
-  end
-
-  <% end %><% end %>defp deps_audit_job do
+  defp deps_audit_job do
     elixir_job("Deps audit",
       needs: :compile,
       steps: [
@@ -501,20 +335,7 @@ defmodule GithubWorkflows do
     ]
   end
 
-  <%= if phoenix do %><%= if deploy do %>defp delete_previous_deployments_step do
-    [
-      name: "Delete previous deployments",
-      uses: "strumwolf/delete-deployment-environment@v2.2.3",
-      with: [
-        token: "${{ secrets.GITHUB_TOKEN }}",
-        environment: @environment_name,
-        ref: "${{ github.head_ref }}",
-        onlyRemoveDeployments: true
-      ]
-    ]
-  end
-
-  <% end %><% end %>defp cache_opts(prefix, path) do
+  defp cache_opts(prefix, path) do
     [
       key: "#{prefix}-${{ github.sha }}",
       path: path,
@@ -529,22 +350,5 @@ defmodule GithubWorkflows do
       key: "#{prefix}-${{ github.sha }}",
       path: path
     ]
-  end<%= if phoenix do %><%= if deploy do %>
-
-  defp fly_env do
-    [
-      FLY_API_TOKEN: "${{ secrets.FLY_API_TOKEN }}",
-      FLY_ORG: "optimum-bh",
-      FLY_REGION: "fra",
-      PHX_HOST: "#{@preview_app_name}.fly.dev",
-      REPO_NAME: @repo_name
-    ]
   end
-
-  defp preview_app_environment do
-    [
-      name: @environment_name,
-      url: "https://#{@preview_app_host}"
-    ]
-  end<% end %><% end %>
 end

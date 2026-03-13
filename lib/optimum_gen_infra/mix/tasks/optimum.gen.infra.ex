@@ -40,33 +40,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         prettier: ["cmd npx prettier -w ."]
   """
 
-  @dockerignore ~S"""
-  # Optimum development/test artifacts
-  /.github/
-  /node_modules/
-  /priv/plts/
-  /screenshots/
-  /package.json
-  /package-lock.json
-  .credo.exs
-  .DS_Store
-  .env
-  .env.prod.sample
-  .env.sample
-  .formatter.exs
-  .gitattributes
-  .gitignore
-  .mise.toml
-  .prettierignore
-  .prettierrc.js
-  .sobelow-conf
-  .tool-versions
-  coveralls.json
-  fly.toml
-  fly.prod.toml
-  README.md
-  """
-
   @gitignore ~S"""
   # Optimum development/test artifacts
   /node_modules/
@@ -92,10 +65,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     phoenix: :boolean
   ]
 
-  @phoenix_switches [
-    fly_app_prefix: :string
-  ]
-
   @deps ~S"""
         <%= if phoenix do %>{:appsignal_phoenix, "~> 2.8"},
         <% end %>{:credo, "~> 1.7", only: :test, runtime: false},
@@ -117,13 +86,9 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     coveralls: "coveralls.json",
     credo: ".credo.exs",
     dialyzer_ignore: ".dialyzer_ignore.exs",
-    dockerfile: "Dockerfile",
-    dockerignore: ".dockerignore",
     env_prod_sample: ".env.prod.sample",
     env_sample: ".env.sample",
     env: ".env",
-    fly: "fly.toml",
-    fly_prod: "fly.prod.toml",
     formatter: ".formatter.exs",
     github_workflows: ".github/github_workflows.ex",
     gitignore: ".gitignore",
@@ -135,7 +100,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     prettierignore: ".prettierignore",
     prettierrc: ".prettierrc.js",
     prod_config: "config/prod.exs",
-    rel_env: "rel/env.sh.eex",
     readme: "README.md",
     router: "lib/<app_name>_web/router.ex",
     runtime_config: "config/runtime.exs",
@@ -150,8 +114,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     @file_paths[:env],
     @file_paths[:env_prod_sample],
     @file_paths[:env_sample],
-    @file_paths[:fly],
-    @file_paths[:fly_prod],
     @file_paths[:github_workflows],
     @file_paths[:health_controller],
     @file_paths[:health_controller_test],
@@ -171,11 +133,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     @file_paths[:health_controller_test],
     @file_paths[:mise],
     @file_paths[:sobelow_conf]
-  ]
-
-  @deploy_files [
-    @file_paths[:fly],
-    @file_paths[:fly_prod]
   ]
 
   @config ~S"""
@@ -251,12 +208,11 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         environment variable APPSIGNAL_PUSH_API_KEY is missing.
         """
 
-    revision_file = Path.join([:code.priv_dir(:<%= app_name %>), "REVISION"])
-
     appsignal_revision =
-      revision_file
-      |> File.read!()
-      |> String.trim()
+      System.get_env("APP_REVISION") ||
+        raise """
+        environment variable APP_REVISION is missing.
+        """
 
     config :appsignal, :config,
       env: appsignal_app_env,
@@ -280,10 +236,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     setup_git_submodules(project_root, bindings, opts)
 
     if opts[:phoenix] do
-      if opts[:fly_app_prefix] not in [nil, ""] do
-        setup_release(project_root, bindings, versions, opts)
-      end
-
+      setup_release(project_root)
       setup_tidewave(project_root, bindings)
     end
 
@@ -296,14 +249,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
     check_switches(@switches, opts)
 
-    if opts[:phoenix] do
-      {phoenix_opts, _remaining_phoenix_args} =
-        OptionParser.parse!(args, switches: @phoenix_switches)
-
-      Keyword.merge(opts, phoenix_opts)
-    else
-      opts
-    end
+    opts
   end
 
   defp check_switches(switches, opts) do
@@ -351,14 +297,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         capture: :all_but_first
       )
 
-    fly_app_prefix = Keyword.get(opts, :fly_app_prefix, "")
-
     [
       app_name: app_name_snake_case,
       app_name_camel_case: app_name_camel_case,
-      deploy: fly_app_prefix not in [nil, ""],
       elixir_version: versions[:elixir],
-      fly_app_prefix: fly_app_prefix,
       github_url: Keyword.fetch!(opts, :github_url),
       node_version: versions[:node],
       otp_major_version: versions[:otp_major_version],
@@ -382,13 +324,8 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp create_new_files(project_root, bindings, opts) do
-    deploy? = opts[:fly_app_prefix] not in [nil, ""]
-
     Enum.each(@new_files, fn path ->
       cond do
-        path in @deploy_files and not deploy? ->
-          :skip
-
         path in @phoenix_files and not opts[:phoenix] ->
           :skip
 
@@ -838,36 +775,6 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     File.write!(path, updated_content)
   end
 
-  defp update_dockerignore_file(project_root, bindings, opts) do
-    path = get_file_path(@file_paths[:dockerignore], project_root, bindings)
-
-    Mix.shell().info([:yellow, "* updating file #{path}"])
-
-    content = File.read!(path)
-    updated_content = update_ignore_file_content(@dockerignore, content, bindings, opts)
-    File.write!(path, updated_content)
-  end
-
-  defp update_dockerfile_file(project_root, bindings, versions) do
-    path = get_file_path(@file_paths[:dockerfile], project_root, bindings)
-
-    Mix.shell().info([:yellow, "* updating file #{path}"])
-
-    content =
-      path
-      |> File.read!()
-      |> String.replace(~r/ARG ELIXIR_VERSION=.*/, "ARG ELIXIR_VERSION=#{versions[:elixir]}")
-      |> String.replace(~r/ARG OTP_VERSION=.*/, "ARG OTP_VERSION=#{versions[:otp]}")
-      |> String.replace(~r/COPY rel rel.*RUN mix release\n/s, ~S"""
-      COPY rel rel
-      COPY .git .git
-      RUN cat .git/HEAD | grep "ref: " && (cat .git/HEAD | awk '{print ".git/"$2}' | xargs cat >> priv/REVISION) || cat .git/HEAD >> priv/REVISION
-      RUN mix release
-      """)
-
-    File.write!(path, content)
-  end
-
   defp setup_project do
     Mix.shell().info([:green, "* activating mise"])
 
@@ -907,28 +814,38 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end
   end
 
-  defp setup_release(project_root, bindings, versions, opts) do
+  defp setup_release(project_root) do
     Mix.shell().info([:green, "* generating release"])
 
-    case System.shell("yes 2>/dev/null | mix phx.gen.release --docker") do
+    case System.shell("yes 2>/dev/null | mix phx.gen.release") do
       {_output, 0} ->
-        :ok
+        patch_app_script(project_root)
 
       {output, exit_code} ->
         raise """
-        mix phx.gen.release --docker failed (exit code: #{exit_code})
-
-        This command is required to generate the Dockerfile and release configuration.
-        Please fix the error and run the generator again.
+        mix phx.gen.release failed (exit code: #{exit_code})
 
         Error output:
         #{output}
         """
     end
+  end
 
-    update_dockerignore_file(project_root, bindings, opts)
-    update_dockerfile_file(project_root, bindings, versions)
-    create_file(project_root, @file_paths[:rel_env], bindings, opts)
+  defp patch_app_script(project_root) do
+    app_script = Path.join(project_root, "rel/overlays/bin/server")
+
+    Mix.shell().info([:yellow, "* updating file #{app_script}"])
+
+    content = File.read!(app_script)
+
+    updated_content =
+      String.replace(
+        content,
+        "PHX_SERVER=true exec",
+        ~S'APP_REVISION=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") PHX_SERVER=true exec'
+      )
+
+    File.write!(app_script, updated_content)
   end
 
   defp setup_tidewave(project_root, bindings) do
