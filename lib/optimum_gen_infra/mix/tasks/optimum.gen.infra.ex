@@ -97,19 +97,19 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   ]
 
   @deps ~S"""
-        <%= if phoenix do %>{:appsignal_phoenix, "~> 2.3"},
+        <%= if phoenix do %>{:appsignal_phoenix, "~> 2.8"},
         <% end %>{:credo, "~> 1.7", only: :test, runtime: false},
         {:dialyxir, "~> 1.4", only: :test, runtime: false},
-        {:doctest_formatter, "~> 0.3", only: [:dev, :test], runtime: false},
-        {:ex_doc, "~> 0.34", only: :dev, runtime: false},
-        <%= if ecto do %>{:ex_machina, "~> 2.7", only: :test},
+        {:doctest_formatter, "~> 0.4", only: [:dev, :test], runtime: false},
+        {:ex_doc, "~> 0.40", only: :dev, runtime: false},
+        <%= if ecto do %>{:ex_machina, "~> 2.8", only: :test},
         <% end %>{:excoveralls, "~> 0.18", only: :test},
         <%= if ecto do %>{:faker, "~> 0.18", only: :test},
         <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
         {:mix_audit, "~> 2.1", only: :test, runtime: false},
         {:optimum_credo, "~> 0.2", only: :test, runtime: false}<%= if phoenix do %>,
-        {:sobelow, "~> 0.13", only: :test, runtime: false},
-        {:tidewave, "~> 0.1", only: :dev}<% end %>
+        {:sobelow, "~> 0.14", only: :test, runtime: false},
+        {:tidewave, "~> 0.5", only: :dev}<% end %>
   """
 
   @file_paths [
