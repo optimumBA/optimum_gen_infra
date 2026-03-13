@@ -59,11 +59,14 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   @switches [
     ecto: :boolean,
     elixir_version: :string,
+    github_actions: :boolean,
     github_url: :string,
     node_version: :string,
     otp_version: :string,
     phoenix: :boolean
   ]
+
+  @optional_switches [:github_actions]
 
   @deps ~S"""
         <%= if phoenix do %>{:appsignal_phoenix, "~> 2.8"},
@@ -74,8 +77,8 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         <%= if ecto do %>{:ex_machina, "~> 2.8", only: :test},
         <% end %>{:excoveralls, "~> 0.18", only: :test},
         <%= if ecto do %>{:faker, "~> 0.18", only: :test},
-        <% end %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
-        {:mix_audit, "~> 2.1", only: :test, runtime: false},
+        <% end %><%= if github_actions do %>{:github_workflows_generator, "~> 0.1", only: :dev, runtime: false},
+        <% end %>{:mix_audit, "~> 2.1", only: :test, runtime: false},
         {:optimum_credo, "~> 0.2", only: :test, runtime: false}<%= if phoenix do %>,
         {:sobelow, "~> 0.14", only: :test, runtime: false},
         {:tidewave, "~> 0.5", only: :dev}<% end %>
@@ -105,6 +108,10 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     runtime_config: "config/runtime.exs",
     sobelow_conf: ".sobelow-conf",
     tool_versions: ".tool-versions"
+  ]
+
+  @github_actions_files [
+    @file_paths[:github_workflows]
   ]
 
   @new_files [
@@ -240,14 +247,17 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       setup_tidewave(project_root, bindings)
     end
 
-    generate_github_workflows()
+    if opts[:github_actions], do: generate_github_workflows()
     format_files()
   end
 
   defp validate_opts(args) do
     {opts, _remaining_args} = OptionParser.parse!(args, switches: @switches)
 
-    check_switches(@switches, opts)
+    opts = Keyword.put_new(opts, :github_actions, true)
+
+    required_switches = Keyword.drop(@switches, @optional_switches)
+    check_switches(required_switches, opts)
 
     opts
   end
@@ -329,6 +339,9 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
         path in @phoenix_files and not opts[:phoenix] ->
           :skip
 
+        path in @github_actions_files and not opts[:github_actions] ->
+          :skip
+
         true ->
           create_file(project_root, path, bindings, opts)
       end
@@ -337,7 +350,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
 
   defp update_existing_files(project_root, bindings, opts) do
     update_mix_file(project_root, bindings, opts)
-    update_formatter_file(project_root, bindings)
+    update_formatter_file(project_root, bindings, opts)
     update_gitignore_file(project_root, bindings, opts)
     create_tool_versions_file(project_root, bindings, opts)
 
@@ -593,10 +606,17 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
     end)
   end
 
-  defp update_formatter_file(project_root, bindings) do
+  defp update_formatter_file(project_root, bindings, opts) do
     path = get_file_path(@file_paths[:formatter], project_root, bindings)
 
     Mix.shell().info([:yellow, "* updating file #{path}"])
+
+    inputs_replacement =
+      if opts[:github_actions] do
+        ~S|"*.{heex,ex,exs}", ".github/github_workflows.ex"|
+      else
+        ~S|"*.{heex,ex,exs}"|
+      end
 
     formatter_file =
       path
@@ -607,7 +627,7 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
       )
       |> String.replace(
         ~r|"\*\.{heex,ex,exs}"(?:,[\s\n]+"\.github/github_workflows\.ex")?|,
-        ~S|"*.{heex,ex,exs}", ".github/github_workflows.ex"|
+        inputs_replacement
       )
 
     File.write!(path, formatter_file)

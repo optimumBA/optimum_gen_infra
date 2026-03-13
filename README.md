@@ -17,6 +17,10 @@ Required:
 - `--node-version`
 - `--otp-version`
 
+Optional:
+
+- `--no-github-actions` - When provided, skips GitHub Actions workflows setup
+
 ## Installation
 
 Install OptimumGenInfra directly from GitHub:
