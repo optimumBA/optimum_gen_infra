@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 (2026-03-14)
+
+- Made GitHub Actions workflows optional via `--github-actions` flag.
+- Removed Fly.io and Docker setup.
+- Updated OptimumCredo to 0.2.
+- Upgraded Elixir, Erlang, and Node.js versions.
+- Updated dependencies.
+- Fixed Credo issues.
+
 ## 0.3.0 (2025-11-17)
 
 - Upgraded to Elixir 1.19.3, Erlang 28.1.1, and Node.js 22.21.1.
