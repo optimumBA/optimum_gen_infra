@@ -252,9 +252,9 @@ defmodule Mix.Tasks.Optimum.Gen.Infra do
   end
 
   defp validate_opts(args) do
-    {opts, _remaining_args} = OptionParser.parse!(args, switches: @switches)
+    {parsed_opts, _remaining_args} = OptionParser.parse!(args, switches: @switches)
 
-    opts = Keyword.put_new(opts, :github_actions, true)
+    opts = Keyword.put_new(parsed_opts, :github_actions, true)
 
     required_switches = Keyword.drop(@switches, @optional_switches)
     check_switches(required_switches, opts)
