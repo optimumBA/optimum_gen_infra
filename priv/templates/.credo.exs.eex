@@ -175,6 +175,7 @@
           {Credo.Check.Refactor.UnlessWithElse, []},
           {Credo.Check.Refactor.UtcNowTruncate, []},
           {Credo.Check.Refactor.WithClauses, []},
+          {OptimumCredo.Check.Refactor.LiveViewBareMatch, []},
 
           #
           ## Warnings
