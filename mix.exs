@@ -4,18 +4,11 @@ defmodule OptimumGenInfra.MixProject do
   def project do
     [
       app: :optimum_gen_infra,
-      version: "0.4.0",
+      version: "0.5.0",
       elixir: "~> 1.19",
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: optimum_deps() ++ app_deps(),
-
-      # Hex package
-      description: "Generate GitHub Actions workflows",
-      package: package(),
-      hex: [
-        api_url: "https://hex.codecodeship.com/api"
-      ],
 
       # CI
       dialyzer: [
@@ -52,14 +45,6 @@ defmodule OptimumGenInfra.MixProject do
         credo: :test,
         dialyzer: :test
       ]
-    ]
-  end
-
-  defp package do
-    [
-      licenses: [],
-      links: %{},
-      maintainers: ["Almir Sarajčić"]
     ]
   end
 

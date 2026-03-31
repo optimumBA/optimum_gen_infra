@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0 (2026-03-31)
+
+- Added `LiveViewBareMatch` Credo check to the generated `.credo.exs` to catch bare `{:ok, _} =` pattern matches in LiveView modules.
+- Updated OptimumCredo to 0.3.
+
 ## 0.4.0 (2026-03-14)
 
 - Made GitHub Actions workflows optional via `--github-actions` flag.
