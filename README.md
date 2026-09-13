@@ -1,5 +1,10 @@
 # OptimumGenInfra
 
+> [!IMPORTANT]
+> This repository is a public archive. OptimumGenInfra is no longer maintained or
+> sold, and the code may not reflect current Elixir, Phoenix, or infrastructure
+> practices. It is preserved as a historical reference and provided as-is.
+
 Mix task which generates infrastructure code for Elixir apps.
 
 ```bash
@@ -67,6 +72,12 @@ mix optimum.gen.infra \
   --otp-version 28.4.1
 ```
 
-## Contact
+## Maintenance status
 
-For any questions contact us at [tools@optimum.ba](mailto:tools@optimum.ba).
+This repository is archived. Issues and pull requests are not accepted.
+
+## License
+
+The source code is available under the [Apache License 2.0](LICENSE). The
+license does not grant permission to use the Optimum name or branding except
+as required to describe the origin of the code.
